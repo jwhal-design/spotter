@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Navajo Mysteries — A Field Journal</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Bitter:ital,wght@0,400;0,600;0,800;1,400&family=Oswald:wght@300;400;500;600&family=Caveat:wght@500;600;700&family=Space+Mono:wght@400;700&display=swap');
+
+  :root {
+    --sand:      #d9c4a3;
+    --sand-lt:   #e7d8bd;
+    --paper:     #efe4cd;
+    --paper-warm:#e9dcc0;
+    --canyon:    #7a3b2e;
+    --canyon-dk: #5c2a20;
+    --dusk:      #2e3548;
+    --dusk-dk:   #1f2432;
+    --dusk-dker: #171b26;
+    --ink:       #2a2116;
+    --ink-soft:  #574835;
+    --ink-blue:  #35435f;
+    --turq:      #2b7a78;
+    --turq-dk:   #1d5a58;
+    --sun:       #d98b2b;
+    --shelf:     #3a2d1e;
+    --edge:      #b39a72;
+    --thread:    #6f5a3c;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: radial-gradient(ellipse at 50% -5%, #3a4258 0%, var(--dusk-dker) 60%);
+    font-family: 'Bitter', Georgia, serif;
+    color: var(--ink);
+    min-height: 100vh;
+    padding: 18px 12px 48px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap { max-width: 780px; margin: 0 auto; }
+
+  .journal {
+    position: relative;
+    background:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E"),
+      linear-gradient(180deg, #efe4cd 0%, #e9dcc0 40%, #e4d5b6 100%);
+    border-radius: 3px;
+    box-shadow: 0 2px 0 #cbb890, 0 22px 50px rgba(0,0,0,0.55), inset 0 0 0 1px rgba(120,90,50,0.25);
+  }
+  .journal::before {
+    content:''; position:absolute; inset:0; border-radius:3px; pointer-events:none;
+    box-shadow: inset 0 0 40px rgba(90,60,30,0.28), inset 0 0 8px rgba(60,40,20,0.4);
+    z-index: 5;
+  }
+  .binding { position:absolute; top:0; bottom:0; left:26px; width:2px;
+    background: repeating-linear-gradient(180deg, var(--thread) 0 9px, transparent 9px 18px); opacity:0.5; z-index:6; }
+  .binding::before, .binding::after { content:''; position:absolute; top:0; bottom:0; width:1px; background:rgba(120,90,50,0.35); }
+  .binding::before { left:-6px; } .binding::after { left:8px; }
+
+  .pad { padding-left: 46px; }
+
+  .cover {
+    position: relative; padding: 26px 26px 88px 20px;
+    background: linear-gradient(180deg, #e9962f 0%, #cf7a2c 30%, #9c4c2c 62%, #5c2a20 100%);
+    border-radius: 3px 3px 0 0; overflow: hidden;
+  }
+  .cover .sun { position:absolute; top:22px; right:30px; width:56px; height:56px; border-radius:50%;
+    background: radial-gradient(circle at 40% 40%, #fde6b8, #f4c95a 55%, #e9962f 100%);
+    box-shadow: 0 0 46px 10px rgba(253,230,184,0.35); z-index:1; }
+  .eyebrow { font-family:'Space Mono',monospace; font-size:10px; letter-spacing:5px; text-transform:uppercase;
+    color:#efe0c4; opacity:0.85; position:relative; z-index:2; }
+  .title { font-family:'Oswald',sans-serif; font-weight:600; font-size:clamp(30px,8vw,54px); line-height:0.92;
+    letter-spacing:1px; text-transform:uppercase; color:#fbe6c4; margin:6px 0 6px; position:relative; z-index:2;
+    text-shadow:0 2px 6px rgba(60,20,10,0.4); }
+  .byline { position:relative; z-index:2; }
+  .byline .hand { font-family:'Caveat',cursive; font-size:clamp(19px,5vw,26px); color:#fbe6c4; transform:rotate(-1.5deg); display:inline-block; }
+  .byline .attrib { font-family:'Bitter',serif; font-style:italic; font-size:13px; color:#f0d6a8; display:block; margin-top:2px; }
+  .pin-note { position:absolute; top:18px; right:96px; z-index:3; background:#f4ecd6; color:var(--ink-blue);
+    font-family:'Caveat',cursive; font-weight:600; font-size:16px; line-height:1.15; padding:10px 12px 12px; width:132px;
+    transform:rotate(4deg); box-shadow:2px 4px 8px rgba(0,0,0,0.35); border:1px solid #d8c9a4; }
+  .pin-note::before { content:''; position:absolute; top:-8px; left:50%; transform:translateX(-50%) rotate(-3deg);
+    width:44px; height:16px; background:rgba(230,215,170,0.6); border:1px solid rgba(180,150,90,0.4); }
+  @media (max-width:560px){ .pin-note{ display:none; } }
+  .mesa { position:absolute; left:0; right:0; bottom:0; height:78px; z-index:1; }
+
+  .fieldbar { position:relative; z-index:4; margin:0 18px; margin-top:-46px; background:var(--dusk);
+    color:var(--paper); padding:16px 22px 15px; border-radius:3px; box-shadow:0 8px 22px rgba(0,0,0,0.45);
+    display:flex; flex-wrap:wrap; gap:16px 26px; align-items:center; }
+  .stat { display:flex; flex-direction:column; gap:3px; }
+  .stat .num { font-family:'Oswald',sans-serif; font-weight:500; font-size:24px; line-height:1; color:var(--sun); }
+  .stat .num.turq { color:#5fd0cd; }
+  .stat .lbl { font-family:'Space Mono',monospace; letter-spacing:2px; text-transform:uppercase; font-size:9px; opacity:0.7; }
+  .track-wrap { flex:1 1 190px; min-width:170px; }
+  .track { height:11px; background:rgba(0,0,0,0.4); border-radius:6px; overflow:hidden; border:1px solid rgba(255,255,255,0.08); }
+  .track-fill { height:100%; width:0%; background:linear-gradient(90deg,var(--turq),#54c9c6); transition:width .6s cubic-bezier(.2,.8,.2,1); }
+  .track-cap { display:flex; justify-content:space-between; margin-top:6px; font-family:'Space Mono',monospace; font-size:9px; letter-spacing:1px; opacity:0.75; }
+  .toggle { display:inline-flex; align-items:center; gap:8px; cursor:pointer; user-select:none;
+    font-family:'Space Mono',monospace; font-size:10px; letter-spacing:2px; text-transform:uppercase; color:var(--paper);
+    border:1px dashed rgba(255,255,255,0.4); border-radius:4px; padding:7px 11px; transition:all .15s; -webkit-tap-highlight-color:transparent; }
+  .toggle:hover { border-color:var(--sun); color:#f6c983; }
+  .toggle .dot { width:9px; height:9px; border-radius:50%; background:rgba(255,255,255,0.25); transition:all .15s; }
+  .toggle.on { border-style:solid; border-color:var(--sun); color:#f6c983; }
+  .toggle.on .dot { background:var(--sun); box-shadow:0 0 8px var(--sun); }
+
+  .legend { position:relative; z-index:2; margin:12px 18px 0; padding:4px 4px 0;
+    display:flex; flex-wrap:wrap; gap:7px 20px; font-family:'Caveat',cursive; font-weight:600; font-size:16px; color:var(--ink-blue); }
+  .legend span { display:inline-flex; align-items:center; gap:7px; transform:rotate(-0.5deg); }
+  .lg-swatch { width:14px; height:14px; border-radius:3px; display:inline-block; border:1px solid rgba(0,0,0,0.25); }
+
+  .trail { position:relative; z-index:2; padding:14px 18px 8px; }
+  .route { position:absolute; left:34px; top:0; bottom:0; width:24px; z-index:1; pointer-events:none; }
+
+  .era { position:relative; z-index:2; margin:18px 0 6px 22px; display:flex; align-items:baseline; gap:10px; }
+  .era .waypoint { position:absolute; left:-30px; top:2px; width:20px; height:20px; border-radius:50%;
+    background:var(--paper); border:2.5px solid var(--canyon); display:flex; align-items:center; justify-content:center;
+    font-family:'Oswald',sans-serif; font-size:10px; font-weight:600; color:var(--canyon); box-shadow:0 1px 3px rgba(0,0,0,0.25); }
+  .era h2 { font-family:'Oswald',sans-serif; font-weight:500; letter-spacing:2px; text-transform:uppercase; font-size:15px; color:var(--canyon-dk); }
+  .era small { font-family:'Caveat',cursive; font-weight:600; font-size:16px; color:var(--ink-soft); transform:rotate(-1deg); }
+
+  .book { position:relative; z-index:2; margin:0 0 12px 22px; display:grid; grid-template-columns:44px 1fr auto;
+    background:var(--paper-warm); border:1px solid var(--edge); border-radius:3px;
+    box-shadow:1px 2px 5px rgba(70,45,20,0.18); transition:transform .12s, box-shadow .12s; }
+  .book:hover { transform:translateX(2px); box-shadow:2px 4px 10px rgba(70,45,20,0.24); }
+  .spine { position:relative; border-radius:3px 0 0 3px; overflow:hidden; background:var(--canyon);
+    border-right:2px solid rgba(0,0,0,0.25); display:flex; align-items:center; justify-content:center;
+    font-family:'Oswald',sans-serif; font-weight:500; font-size:17px; color:var(--sand-lt); }
+  .spine::before { content:''; position:absolute; inset:0;
+    background:linear-gradient(105deg, rgba(255,255,255,0.22) 0%, transparent 22%, transparent 82%, rgba(0,0,0,0.25) 100%); }
+  .spine::after { content:''; position:absolute; top:0; bottom:0; left:3px; width:1.5px; background:rgba(255,255,255,0.18); }
+  .book:nth-child(even) .spine { background:var(--dusk); }
+  .book.read .spine { background:var(--turq); }
+
+  .body { padding:12px 14px; min-width:0; position:relative; }
+  .bk-title { font-family:'Bitter',serif; font-weight:800; font-size:clamp(15px,4vw,18px); line-height:1.2;
+    color:var(--ink); cursor:pointer; background:none; border:none; padding:0; text-align:left; }
+  .bk-title:hover { color:var(--canyon); text-decoration:underline; text-underline-offset:3px; }
+  .bk-meta { margin-top:6px; display:flex; flex-wrap:wrap; gap:5px 7px; align-items:center; }
+  .yr { font-family:'Space Mono',monospace; font-size:11px; font-weight:700; color:var(--ink-soft); letter-spacing:1px; }
+  .pill { font-family:'Space Mono',monospace; font-size:9px; letter-spacing:1px; padding:2px 7px; border-radius:2px; text-transform:uppercase; }
+  .pill.lead   { background:var(--sand); color:var(--canyon-dk); border:1px solid var(--edge); }
+  .pill.screen { background:rgba(217,139,43,0.15); color:#9a5a12; border:1px solid var(--sun); }
+  .pill.edgar  { background:#3a2d1e; color:#e7c27a; border:1px solid #6b5426; }
+  .pill.avail  { background:rgba(43,122,120,0.12); color:var(--turq-dk); border:1px solid var(--turq); }
+  .tagline { margin-top:7px; font-size:12.5px; font-style:italic; color:var(--ink-soft); line-height:1.45; }
+  .scrawl { position:absolute; right:10px; bottom:6px; font-family:'Caveat',cursive; font-weight:700; font-size:19px;
+    color:var(--turq-dk); transform:rotate(-8deg); opacity:0; transition:opacity .2s; pointer-events:none; }
+  .book.read.journal-on .scrawl { opacity:0.9; }
+
+  .marks { display:flex; flex-direction:column; justify-content:center; gap:9px; padding:12px 14px 12px 4px; }
+  .mark { display:flex; align-items:center; gap:7px; cursor:pointer; user-select:none; -webkit-tap-highlight-color:transparent; }
+  .mark .box { width:24px; height:24px; border-radius:4px; border:2px solid var(--edge); background:var(--sand-lt);
+    display:flex; align-items:center; justify-content:center; font-family:'Caveat',cursive; font-weight:700; font-size:20px; line-height:1; transition:all .12s; }
+  .mark .txt { font-family:'Space Mono',monospace; font-size:9px; letter-spacing:1px; text-transform:uppercase; color:var(--ink-soft); width:40px; }
+  .mark[data-kind="read"] .box.on { background:var(--turq); border-color:var(--turq-dk); color:#fff; }
+  .mark[data-kind="own"]  .box.on { background:var(--sun);  border-color:#9a5a12;      color:#3a2018; }
+  .mark:hover .box { border-color:var(--ink-soft); }
+
+  .overlay { display:none; position:fixed; inset:0; background:rgba(20,15,10,0.85); z-index:100; padding:16px; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+  .overlay.open { display:flex; align-items:flex-start; justify-content:center; }
+  .card { background:var(--paper); max-width:560px; width:100%; margin:auto; border-radius:4px; overflow:hidden;
+    box-shadow:0 24px 60px rgba(0,0,0,0.6); border:1px solid var(--canyon-dk);
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n2'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n2)' opacity='0.05'/%3E%3C/svg%3E"); }
+  .card-top { position:relative; padding:20px 22px 18px; color:var(--sand-lt); background:linear-gradient(135deg,var(--canyon),var(--canyon-dk)); }
+  .card-top.chee { background:linear-gradient(135deg,var(--dusk),var(--dusk-dk)); }
+  .card-top.duo  { background:linear-gradient(135deg,var(--turq),var(--turq-dk)); }
+  .card-num { font-family:'Space Mono',monospace; font-size:10px; letter-spacing:3px; opacity:0.8; }
+  .card-title { font-family:'Oswald',sans-serif; font-weight:600; font-size:clamp(20px,5.5vw,30px); line-height:1.05; text-transform:uppercase; margin:5px 0 6px; }
+  .card-sub { font-family:'Caveat',cursive; font-weight:600; font-size:19px; }
+  .card-x { position:absolute; top:14px; right:14px; width:30px; height:30px; border-radius:50%; background:rgba(0,0,0,0.25); border:none; color:var(--sand-lt); font-size:16px; cursor:pointer; line-height:1; }
+  .card-x:hover { background:rgba(0,0,0,0.45); }
+  .card-body { padding:20px 22px 24px; }
+  .card-label { font-family:'Space Mono',monospace; font-size:9px; letter-spacing:3px; text-transform:uppercase; color:var(--canyon); border-bottom:1px solid var(--edge); padding-bottom:5px; margin-bottom:10px; }
+  .card-syn { font-size:14.5px; line-height:1.65; color:var(--ink); margin-bottom:18px; }
+  .card-note { font-family:'Space Mono',monospace; font-size:11px; line-height:1.6; color:var(--ink-soft); background:var(--sand); border:1px solid var(--edge); border-radius:3px; padding:11px 13px; }
+
+  .colophon { position:relative; z-index:2; margin:8px 18px 0; padding:18px 6px 22px; border-top:1px dashed var(--edge); text-align:center; }
+  .colophon .hand { font-family:'Caveat',cursive; font-weight:600; font-size:18px; color:var(--ink-soft); transform:rotate(-0.5deg); display:inline-block; }
+  .colophon .fine { font-family:'Space Mono',monospace; font-size:9px; letter-spacing:1px; color:var(--edge); margin-top:6px; line-height:1.7; }
+
+  .loading { text-align:center; padding:40px; color:var(--ink-soft); font-family:'Caveat',cursive; font-size:20px; }
+
+  @media (max-width:480px){
+    .book { grid-template-columns:36px 1fr; }
+    .marks { grid-column:1/-1; flex-direction:row; justify-content:flex-start; padding:0 14px 12px; gap:18px; }
+    .scrawl { bottom:44px; }
+    .pad { padding-left:40px; }
+    .route { left:28px; }
+    .book, .era { margin-left:18px; }
+  }
+  @media (prefers-reduced-motion: reduce){ * { transition:none !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="journal">
+    <div class="binding"></div>
+    <div class="pad">
+      <div class="cover">
+        <div class="sun"></div>
+        <div class="pin-note">18 cases.<br>Read them all.</div>
+        <div class="eyebrow">Navajo Tribal Police &middot; Case Log</div>
+        <h1 class="title">The Navajo<br>Mysteries</h1>
+        <div class="byline">
+          <span class="hand">Joe Leaphorn &amp; Jim Chee</span>
+          <span class="attrib">the eighteen novels of Tony Hillerman</span>
+        </div>
+        <svg class="mesa" viewBox="0 0 780 78" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M0,78 L0,50 L95,50 L118,32 L255,32 L255,52 L370,52 L392,24 L530,24 L530,56 L650,56 L672,40 L780,40 L780,78 Z" fill="#4a2018"/>
+          <path d="M0,78 L0,62 L165,62 L188,52 L350,52 L372,64 L575,64 L598,54 L780,54 L780,78 Z" fill="#301410" opacity="0.9"/>
+        </svg>
+      </div>
+
+      <div class="fieldbar">
+        <div class="stat"><span class="num" id="s-read">0</span><span class="lbl">Read</span></div>
+        <div class="stat"><span class="num turq" id="s-own">0</span><span class="lbl">On the shelf</span></div>
+        <div class="track-wrap">
+          <div class="track"><div class="track-fill" id="fill"></div></div>
+          <div class="track-cap"><span id="cap-l">the trail so far</span><span id="cap-r">0%</span></div>
+        </div>
+        <div class="toggle" id="toggle"><span class="dot"></span><span>Field notes</span></div>
+      </div>
+
+      <div class="legend">
+        <span><span class="lg-swatch" style="background:var(--turq)"></span> read it</span>
+        <span><span class="lg-swatch" style="background:var(--sun)"></span> own it</span>
+        <span><span class="pill lead" style="padding:1px 6px">LEAPHORN</span> lead detective</span>
+        <span><span class="pill screen" style="padding:1px 6px">SCREEN</span> filmed</span>
+        <span><span class="pill edgar" style="padding:1px 6px">EDGAR</span> award</span>
+      </div>
+
+      <div class="trail" id="trail">
+        <svg class="route" id="route" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg"></svg>
+        <div id="list"><div class="loading">unrolling the map of Dinétah…</div></div>
+      </div>
+
+      <div class="colophon">
+        <span class="hand">Tony Hillerman · 1925–2008 · two Edgars · Grand Master, 1991</span>
+        <div class="fine">NAMED A SPECIAL FRIEND OF THE DINÉ BY THE NAVAJO NATION, 1987 · PROGRESS SAVED TO THIS DEVICE</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="card">
+    <div class="card-top" id="c-top">
+      <button class="card-x" id="c-x">&times;</button>
+      <div class="card-num" id="c-num"></div>
+      <div class="card-title" id="c-title"></div>
+      <div class="card-sub" id="c-sub"></div>
+    </div>
+    <div class="card-body">
+      <div class="card-label">The Case</div>
+      <div class="card-syn" id="c-syn"></div>
+      <div class="card-label">On the Trail of a Copy</div>
+      <div class="card-note" id="c-note"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const books = [
+  { n:1,  yr:1970, title:"The Blessing Way", lead:"L", screen:false, edgar:false,
+    tag:"A body found with sand in its mouth, and an anthropologist who won't leave the mesa.",
+    syn:"Leaphorn investigates a death near the Lukachukai Mountains that locals attribute to a Navajo Wolf — a witch. A note for purists: Leaphorn is a supporting figure here, not the lead; the book's center of gravity is anthropologist Bergen McKee. Consider it the overture rather than the first true Leaphorn mystery.",
+    note:"In print (Harper). Ebook & audiobook available. The debut that started everything, though newcomers are often steered to book 2 first." },
+  { n:2,  yr:1973, title:"Dance Hall of the Dead", lead:"L", screen:false, edgar:true,
+    tag:"Two boys vanish near a Zuni ceremony. Only one body turns up.",
+    syn:"Leaphorn hunts for a missing Zuni boy and his Navajo friend, moving between the two pueblos' beliefs and a suspiciously tidy archaeological dig. This is where Leaphorn truly takes the lead — patient, skeptical, methodical — and it announced Hillerman as a major voice.",
+    note:"WINNER: Edgar Award, Best Novel (1974). In print; ebook & audiobook available. Widely recommended as the real starting point." },
+  { n:3,  yr:1978, title:"Listening Woman", lead:"L", screen:false, edgar:false,
+    tag:"A blind shaman, a hijacking, and a cave full of the dead.",
+    syn:"A brutal double murder and a near-miss on Leaphorn's own life pull him toward a hostage crisis in the canyons above the San Juan. The last of the Leaphorn-solo novels, and the one where Hillerman's landscape writing fully arrives.",
+    note:"In print; ebook & audiobook available. Closes the first Leaphorn trilogy before Chee enters the picture." },
+  { n:4,  yr:1980, title:"People of Darkness", lead:"C", screen:false, edgar:false,
+    tag:"A box of rocks worth killing for, and a hit man with a very long memory.",
+    syn:"Enter Jim Chee: younger, still studying to become a hataalii (a Navajo healer-singer), and working a case involving a rich white oilman, a stolen keepsake, and an assassin nursing a thirty-year grudge. Chee's spiritual double-life gives the series a second, very different engine.",
+    note:"In print; ebook & audiobook available. Chee's first appearance — the pivot point of the whole series." },
+  { n:5,  yr:1982, title:"The Dark Wind", lead:"C", screen:true, edgar:false,
+    tag:"A crashed plane, a windmill sabotage, and drugs in the desert.",
+    syn:"Chee works a tangle of a dead man, a wrecked drug-running aircraft, and a vandalized Hopi windmill. Jurisdiction, ritual, and greed collide in classic Hillerman fashion.",
+    note:"In print; ebook & audiobook available. Adapted into the 1991 film 'The Dark Wind' (produced by Robert Redford), Lou Diamond Phillips as Chee." },
+  { n:6,  yr:1984, title:"The Ghostway", lead:"C", screen:false, edgar:false,
+    tag:"A shooting at a trading post sends Chee chasing a chindi across two worlds.",
+    syn:"Chee follows a trail from a reservation gas station to Los Angeles and back, wrestling with the Navajo dread of the chindi — the malevolent ghost left behind by the dead — even as he tracks very living killers. The last of the Chee-solo books.",
+    note:"In print; ebook & audiobook available. Completes the Chee trilogy before the two detectives finally meet." },
+  { n:7,  yr:1986, title:"Skinwalkers", lead:"D", screen:false, edgar:false,
+    tag:"Three shotgun blasts through Chee's trailer wall. And that's just the opening.",
+    syn:"The one fans wait for: Leaphorn and Chee, initially wary of each other, are forced together by a string of killings that may be the work of witches — or someone using witchcraft fears as cover. The generational and temperamental friction between the two men becomes the series' beating heart.",
+    note:"In print; ebook & audiobook available. Adapted for PBS 'American Mystery!' (2002) and the basis for AMC's 'Dark Winds' (2022– ). The first true Leaphorn-AND-Chee novel." },
+  { n:8,  yr:1988, title:"A Thief of Time", lead:"D", screen:true, edgar:false,
+    tag:"A missing anthropologist, moonlit pot-hunting, and bones that shouldn't be there.",
+    syn:"A vanished scholar, a black market in Anasazi pottery, and desecrated ancient sites draw both detectives into one of Hillerman's most acclaimed plots. Often named the best book in the series — the archaeology and the ache of loss are perfectly fused.",
+    note:"In print; ebook & audiobook available. A New York Times bestseller and frequent 'start here (after Skinwalkers)' pick. Also filmed for PBS (2004)." },
+  { n:9,  yr:1989, title:"Talking God", lead:"D", screen:false, edgar:false,
+    tag:"A corpse on the railroad tracks, and a museum that collects the sacred.",
+    syn:"The case runs from the reservation to the Smithsonian, taking on the repatriation of Native remains and ceremonial masks. Hillerman turns a mystery into a pointed argument about who owns a culture's dead.",
+    note:"In print; ebook & audiobook available." },
+  { n:10, yr:1990, title:"Coyote Waits", lead:"D", screen:false, edgar:false,
+    tag:"A Navajo cop dead in his burning car, and a shaman who confesses too easily.",
+    syn:"When a tribal officer is killed, an old hataalii is arrested — but Leaphorn and Chee both sense the tidy solution is a lie. Coyote, the trickster, is presiding. A late-series high point.",
+    note:"In print; ebook & audiobook available." },
+  { n:11, yr:1993, title:"Sacred Clowns", lead:"D", screen:false, edgar:false,
+    tag:"A koshare clown and a shop teacher, both dead, both at a Tano pueblo dance.",
+    syn:"Two killings at a ceremonial dance test Chee's courtship of lawyer Janet Pete and Leaphorn's patience with jurisdiction. Hillerman braids the romance and the mystery unusually tightly here.",
+    note:"In print; ebook & audiobook available." },
+  { n:12, yr:1996, title:"The Fallen Man", lead:"D", screen:false, edgar:false,
+    tag:"A skeleton on a ledge of Ship Rock, eleven years after the man went missing.",
+    syn:"Climbers find human bones high on sacred Tsé Bitʼaʼí (Ship Rock). Now-retired Leaphorn is pulled back to a cold case tied to a wealthy ranching family, while Chee handles the present-day fallout.",
+    note:"In print; ebook & audiobook available. Marks Leaphorn's shift into semi-retired consultant mode." },
+  { n:13, yr:1998, title:"The First Eagle", lead:"D", screen:false, edgar:false,
+    tag:"A dead officer, a Hopi in handcuffs, and fleas that carry the plague.",
+    syn:"Chee arrests a Hopi man beside a dying colleague near Yells Back Butte; Leaphorn, now a private investigator, hunts a missing scientist tracking plague-carrying fleas. Two cases, one convergence, and a lot about how obsession works.",
+    note:"In print; ebook & audiobook available." },
+  { n:14, yr:1999, title:"Hunting Badger", lead:"D", screen:false, edgar:false,
+    tag:"A casino robbery, a wounded guard, and a survivalist gone to ground.",
+    syn:"Armed robbers hit a Ute casino and vanish into the canyons. Chee joins the manhunt while Leaphorn follows an old rancher's tip toward an elusive outlaw nicknamed Badger. Loosely echoes the real 1998 Four Corners manhunt.",
+    note:"In print; ebook & audiobook available." },
+  { n:15, yr:2002, title:"The Wailing Wind", lead:"D", screen:false, edgar:false,
+    tag:"A body in a truck, a tin of sand, and a legendary lost gold mine.",
+    syn:"Officer Bernadette Manuelito finds a dead man in an abandoned pickup, and a small mistake with a tobacco tin draws Chee and the retired Leaphorn into a case entwined with an old lost-mine legend and a woman who disappeared long ago.",
+    note:"In print; ebook & audiobook available. Bernie Manuelito's role grows — she'll carry the series later under Anne Hillerman." },
+  { n:16, yr:2003, title:"The Sinister Pig", lead:"D", screen:false, edgar:false,
+    tag:"A dead 'birdwatcher,' missing oil royalties, and a pipeline to nowhere good.",
+    syn:"A murdered undercover agent, siphoned tribal energy royalties, and a suspicious game ranch on the New Mexico–Mexico border pull Chee, Manuelito, and Leaphorn into smuggling and corporate rot.",
+    note:"In print; ebook & audiobook available." },
+  { n:17, yr:2004, title:"Skeleton Man", lead:"D", screen:false, edgar:false,
+    tag:"Diamonds scattered in the Grand Canyon, and a Hopi guide under suspicion.",
+    syn:"Years after a mid-air collision rained a briefcase of diamonds into the Grand Canyon, a single rare stone throws suspicion onto Hopi guide Billy Tuve. Chee, Manuelito, and a stubborn heiress follow the trail into slot canyons where a flash flood is always possible.",
+    note:"In print; ebook & audiobook available. Draws on the real 1956 Grand Canyon airliner collision." },
+  { n:18, yr:2006, title:"The Shape Shifter", lead:"L", screen:false, edgar:false,
+    tag:"A priceless rug that supposedly burned, spotted alive in a magazine photo.",
+    syn:"Retired Leaphorn recognizes a one-of-a-kind Navajo 'weaving of the century' in a glossy photo — a rug he believed destroyed in a fire that also 'killed' a wanted man. The last novel Hillerman wrote, and a fitting solo bow for Leaphorn.",
+    note:"In print; ebook & audiobook available. Tony Hillerman's final novel; his daughter Anne continued the series from 2013." }
+];
+
+const leadName = { L:"A Joe Leaphorn case", C:"A Jim Chee case", D:"Leaphorn & Chee together" };
+const leadPill = { L:"LEAPHORN", C:"CHEE", D:"LEAPHORN + CHEE" };
+const topClass = { L:"", C:"chee", D:"duo" };
+
+const eras = [
+  { key:'L', label:'The Leaphorn Years', note:'books 1–3 · 1970–78', mark:'I' },
+  { key:'C', label:'Enter Jim Chee',     note:'books 4–6 · 1980–84', mark:'II' },
+  { key:'D', label:'The Partnership',     note:'books 7–17 · 1986–04', mark:'III' },
+  { key:'F', label:"Leaphorn's Last Case",note:'book 18 · 2006',      mark:'IV' }
+];
+function eraOf(b){ if(b.n<=3)return'L'; if(b.n<=6)return'C'; if(b.n<=17)return'D'; return'F'; }
+
+let state = {};
+let journalOn = false;
+
+async function loadState(){
+  try { const r = await window.storage.get('hillerman-journal'); if(r&&r.value) state = JSON.parse(r.value); } catch(e){ state={}; }
+  try { const j = await window.storage.get('hillerman-journal-mode'); if(j&&j.value==='1') journalOn = true; } catch(e){}
+}
+async function saveState(){ try{ await window.storage.set('hillerman-journal', JSON.stringify(state)); }catch(e){} }
+async function saveMode(){ try{ await window.storage.set('hillerman-journal-mode', journalOn?'1':'0'); }catch(e){} }
+function rec(n){ return state[n] || (state[n]={read:false,own:false}); }
+
+function s(id,v){ document.getElementById(id).textContent = v; }
+function stats(){
+  const read = books.filter(b=>state[b.n]?.read).length;
+  const own  = books.filter(b=>state[b.n]?.own).length;
+  const pct  = Math.round(read/books.length*100);
+  s('s-read',read); s('s-own',own); s('cap-r',pct+'%');
+  document.getElementById('fill').style.width = pct+'%';
+  s('cap-l', read===0 ? 'the trail so far' : read===books.length ? 'case closed. all eighteen.' : read+' of '+books.length+' solved');
+}
+
+const scrawls = ['read ✓','done ✓','✓ solved','case closed','read it','✓'];
+
+function render(){
+  const list = document.getElementById('list');
+  let html='', cur=null;
+  books.forEach((b,idx)=>{
+    const e = eraOf(b);
+    if(e!==cur){
+      const era = eras.find(x=>x.key===e);
+      html += `<div class="era"><span class="waypoint">${era.mark}</span><h2>${era.label}</h2><small>${era.note}</small></div>`;
+      cur=e;
+    }
+    const r = state[b.n]||{};
+    html += `
+    <div class="book ${r.read?'read':''} ${journalOn?'journal-on':''}" data-n="${b.n}">
+      <div class="spine">${b.n}</div>
+      <div class="body">
+        <button class="bk-title" onclick="openBook(${b.n})">${b.title}</button>
+        <div class="bk-meta">
+          <span class="yr">${b.yr}</span>
+          <span class="pill lead">${leadPill[b.lead]}</span>
+          ${b.screen?'<span class="pill screen">Screen</span>':''}
+          ${b.edgar?'<span class="pill edgar">Edgar</span>':''}
+          <span class="pill avail">In print</span>
+        </div>
+        <div class="tagline">${b.tag}</div>
+        <span class="scrawl">${scrawls[idx%scrawls.length]}</span>
+      </div>
+      <div class="marks">
+        <label class="mark" data-kind="read"><span class="box ${r.read?'on':''}" data-n="${b.n}" data-k="read">${r.read?'✓':''}</span><span class="txt">Read</span></label>
+        <label class="mark" data-kind="own"><span class="box ${r.own?'on':''}" data-n="${b.n}" data-k="own">${r.own?'✓':''}</span><span class="txt">Own</span></label>
+      </div>
+    </div>`;
+  });
+  list.innerHTML = html;
+
+  list.querySelectorAll('.box[data-k]').forEach(box=>{
+    box.addEventListener('click', async e=>{
+      e.preventDefault(); e.stopPropagation();
+      const n=+box.dataset.n, k=box.dataset.k, rc=rec(n);
+      rc[k]=!rc[k];
+      box.classList.toggle('on',rc[k]); box.textContent = rc[k]?'✓':'';
+      if(k==='read') box.closest('.book').classList.toggle('read',rc[k]);
+      stats(); drawRoute(); await saveState();
+    });
+  });
+  stats();
+  requestAnimationFrame(drawRoute);
+}
+
+function drawRoute(){
+  const svg = document.getElementById('route');
+  const trail = document.getElementById('trail');
+  const wps = [...document.querySelectorAll('.waypoint')];
+  if(!wps.length) return;
+  const tb = trail.getBoundingClientRect();
+  const h = trail.scrollHeight;
+  svg.setAttribute('viewBox', `0 0 24 ${h}`);
+  svg.style.height = h+'px';
+  const pts = wps.map(w=>{ const b=w.getBoundingClientRect(); return (b.top - tb.top) + b.height/2; });
+  const readCount = books.filter(b=>state[b.n]?.read).length;
+  const start = pts[0], end = pts[pts.length-1];
+  const traveled = start + (end-start)*(readCount/books.length);
+  let d = `M 12 ${start}`;
+  const step = 26;
+  for(let y=start; y<=end; y+=step){
+    const wob = 12 + Math.sin(y*0.05)*3.2;
+    d += ` L ${wob.toFixed(1)} ${y.toFixed(0)}`;
+  }
+  d += ` L 12 ${end}`;
+  svg.innerHTML = `
+    <path d="${d}" fill="none" stroke="var(--thread)" stroke-width="2" stroke-dasharray="6 5" stroke-linecap="round" opacity="0.55"/>
+    <path d="${d}" fill="none" stroke="var(--turq-dk)" stroke-width="2.4" stroke-linecap="round" opacity="0.85"
+          pathLength="1" stroke-dasharray="1" stroke-dashoffset="${1 - readCount/books.length}"
+          style="transition:stroke-dashoffset .6s ease"/>
+    ${pts.map((y,i)=>`<circle cx="12" cy="${y}" r="2.6" fill="${ (start+(end-start)*(i/(pts.length-1)))<=traveled ? 'var(--turq-dk)' : 'var(--thread)'}"/>`).join('')}
+  `;
+}
+
+function openBook(n){
+  const b = books.find(x=>x.n===n);
+  document.getElementById('c-top').className = 'card-top '+topClass[b.lead];
+  s('c-num', `NO. ${b.n} OF 18 · ${b.yr}`);
+  s('c-title', b.title);
+  s('c-sub', leadName[b.lead]);
+  s('c-syn', b.syn);
+  s('c-note', b.note);
+  document.getElementById('overlay').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+function closeBook(){ document.getElementById('overlay').classList.remove('open'); document.body.style.overflow=''; }
+document.getElementById('c-x').addEventListener('click', closeBook);
+document.getElementById('overlay').addEventListener('click', e=>{ if(e.target.id==='overlay') closeBook(); });
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeBook(); });
+
+const toggleEl = document.getElementById('toggle');
+function applyMode(){
+  toggleEl.classList.toggle('on', journalOn);
+  document.querySelectorAll('.book').forEach(bk=>bk.classList.toggle('journal-on', journalOn));
+}
+toggleEl.addEventListener('click', async ()=>{ journalOn=!journalOn; applyMode(); await saveMode(); });
+
+window.addEventListener('resize', ()=>requestAnimationFrame(drawRoute));
+
+(async function init(){ await loadState(); render(); applyMode(); })();
+</script>
+</body>
+</html>

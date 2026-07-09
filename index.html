@@ -1,0 +1,1787 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="SPOTTER — an unofficial, dependency-free study desk for the NCSF-CPT personal trainer exam. Summaries, flashcards, spaced repetition, quizzes, a timed simulator, scenarios, a crossword, and a prime-mover trainer.">
+<meta name="color-scheme" content="light">
+<title>SPOTTER // NCSF-CPT Prep</title>
+<style>
+/* ============================================================
+   SPOTTER — design tokens
+   Palette lifted from the brief: shock magenta, near-black,
+   deep grape, pink-white paper, white card surfaces.
+   ============================================================ */
+:root{
+  --ink:#0A0A0E;
+  --shock:#EC2CB4;
+  --shock-2:#FF5FD1;
+  --grape:#7E2178;
+  --paper:#FFF4FB;
+  --card:#FFFFFF;
+  --go:#0E9F6E;
+  --stop:#E23A2E;
+  --hair:#0A0A0E;
+  --muted:#5B5560;
+  --shadow:6px 6px 0 var(--ink);
+  --shadow-sm:4px 4px 0 var(--ink);
+  --shadow-xs:3px 3px 0 var(--ink);
+  --bw:3px;                       /* signature border weight */
+  --maxw:960px;
+  --nav:250px;
+  --disp: 900 clamp(2.1rem, 6vw, 4.6rem)/0.94 "Helvetica Neue", Arial, system-ui, sans-serif;
+  --mono: ui-monospace, "SF Mono", "Cascadia Code", "JetBrains Mono", Menlo, Consolas, monospace;
+  --body: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:var(--body); font-size:16px; line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3,h4{margin:0; line-height:1.05}
+p{margin:0 0 .9em}
+a{color:inherit}
+img,svg{display:block; max-width:100%}
+button{font-family:inherit}
+:focus-visible{outline:var(--bw) solid var(--ink); outline-offset:2px}
+::selection{background:var(--shock); color:var(--ink)}
+
+/* utility ---------------------------------------------------- */
+.eyebrow{font:700 .72rem/1 var(--mono); letter-spacing:.16em; text-transform:uppercase}
+.display{font:var(--disp); text-transform:uppercase; letter-spacing:-.02em}
+.lede{font-size:1.06rem; color:#2b2730; max-width:62ch}
+.muted{color:var(--muted)}
+.mono{font-family:var(--mono)}
+.kbd{font:700 .8rem/1 var(--mono); border:2px solid var(--ink); border-radius:4px; padding:.15em .4em; background:var(--card); box-shadow:2px 2px 0 var(--ink)}
+.sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0}
+.hide{display:none !important}
+
+/* ============================================================
+   Layout: sidebar launcher + main stage
+   ============================================================ */
+.app{display:grid; grid-template-columns:var(--nav) 1fr; min-height:100vh}
+
+.sidebar{
+  position:sticky; top:0; align-self:start; height:100vh; overflow:auto;
+  background:var(--ink); color:var(--paper);
+  border-right:var(--bw) solid var(--ink);
+  display:flex; flex-direction:column;
+}
+.brand{
+  padding:22px 18px 16px; border-bottom:var(--bw) solid #2a2730;
+  cursor:pointer; user-select:none;
+}
+.brand .mark{display:flex; align-items:center; gap:10px}
+.brand .glyph{width:34px;height:34px;flex:0 0 auto; color:var(--shock)}
+.brand .word{font:900 1.5rem/1 "Helvetica Neue",Arial,sans-serif; letter-spacing:.02em}
+.brand .sub{margin-top:8px; font:700 .64rem/1.3 var(--mono); letter-spacing:.18em; color:var(--shock-2)}
+
+.nav{padding:10px; display:flex; flex-direction:column; gap:4px; flex:1}
+.navlink{
+  display:flex; align-items:center; gap:11px; width:100%; text-align:left;
+  background:transparent; color:var(--paper); border:2px solid transparent;
+  padding:9px 11px; cursor:pointer; border-radius:2px;
+  font:600 .92rem/1 var(--body); letter-spacing:.01em;
+}
+.navlink .ni{width:20px;height:20px;flex:0 0 auto; color:var(--shock-2)}
+.navlink .nt{font:700 .58rem/1 var(--mono); letter-spacing:.1em; opacity:.55; margin-left:auto}
+.navlink:hover{border-color:var(--shock); color:#fff}
+.navlink[aria-current="page"]{background:var(--shock); color:var(--ink); border-color:var(--ink); box-shadow:3px 3px 0 #000}
+.navlink[aria-current="page"] .ni{color:var(--ink)}
+.navlink[aria-current="page"] .nt{opacity:.8}
+.nav-foot{padding:12px 16px; border-top:var(--bw) solid #2a2730; font:600 .68rem/1.5 var(--mono); color:#8a8490}
+
+.main{min-width:0; display:flex; flex-direction:column}
+.stage{padding:30px clamp(16px,4vw,40px) 90px; margin:0 auto; width:100%; max-width:calc(var(--maxw) + 80px)}
+
+/* mobile top bar (hidden on desktop) -------------------------- */
+.topbar{
+  display:none; position:sticky; top:0; z-index:40;
+  align-items:center; gap:12px; padding:12px 14px;
+  background:var(--ink); color:var(--paper); border-bottom:var(--bw) solid var(--ink);
+}
+.topbar .word{font:900 1.25rem/1 "Helvetica Neue",Arial,sans-serif}
+.topbar .glyph{width:26px;height:26px;color:var(--shock)}
+.burger{
+  margin-left:auto; width:44px;height:40px; display:grid; place-items:center;
+  background:var(--shock); color:var(--ink); border:2px solid var(--ink); box-shadow:3px 3px 0 #000;
+  cursor:pointer; border-radius:2px;
+}
+.burger svg{width:22px;height:22px}
+.backdrop{position:fixed; inset:0; background:rgba(10,10,14,.55); z-index:45; display:none}
+
+/* ============================================================
+   Signature: the WINDOW
+   ============================================================ */
+.window{
+  background:var(--card); border:var(--bw) solid var(--ink);
+  box-shadow:var(--shadow); border-radius:2px; margin-bottom:26px; overflow:hidden;
+}
+.win-bar{
+  display:flex; align-items:center; gap:12px; padding:9px 14px;
+  border-bottom:var(--bw) solid var(--ink); background:var(--paper);
+}
+.dots{display:flex; gap:7px; flex:0 0 auto}
+.dots span{width:11px;height:11px;border:2px solid var(--ink); border-radius:50%; display:block}
+.dots span:nth-child(1){background:var(--shock)}
+.win-title{font:700 .74rem/1 var(--mono); letter-spacing:.12em; text-transform:uppercase}
+.win-ico{margin-left:auto; width:20px;height:20px; color:var(--grape)}
+.win-body{padding:22px}
+@media (max-width:520px){ .win-body{padding:16px} }
+
+/* hero window gets the loud treatment */
+.window.loud{background:var(--shock); color:var(--ink); box-shadow:var(--shadow)}
+.window.loud .win-bar{background:var(--ink); color:var(--paper); border-bottom-color:var(--ink)}
+.window.loud .win-bar .dots span{border-color:var(--paper)}
+.window.loud .win-bar .dots span:nth-child(1){background:var(--paper)}
+.window.loud .win-ico{color:var(--ink)}
+.window.grape{background:var(--grape); color:#fff}
+.window.grape .win-bar{background:var(--ink); color:#fff}
+.window.grape .win-ico{color:var(--shock-2)}
+.window.ink{background:var(--ink); color:var(--paper)}
+.window.ink .win-bar{background:var(--grape)}
+
+/* ============================================================
+   Buttons + chips
+   ============================================================ */
+.btn{
+  display:inline-flex; align-items:center; justify-content:center; gap:8px;
+  font:800 .9rem/1 var(--body); letter-spacing:.01em; cursor:pointer;
+  padding:12px 18px; background:var(--card); color:var(--ink);
+  border:var(--bw) solid var(--ink); box-shadow:var(--shadow-sm); border-radius:2px;
+  transition:transform .06s ease, box-shadow .06s ease;
+}
+.btn:hover{transform:translate(-1px,-1px); box-shadow:5px 5px 0 var(--ink)}
+.btn:active{transform:translate(4px,4px); box-shadow:0 0 0 var(--ink)}
+.btn.solid{background:var(--shock); color:var(--ink)}
+.btn.ink{background:var(--ink); color:var(--paper)}
+.btn.ghost{box-shadow:none; background:transparent}
+.btn.sm{padding:8px 12px; font-size:.8rem; box-shadow:var(--shadow-xs)}
+.btn.block{width:100%}
+.btn[disabled]{opacity:.4; cursor:not-allowed; transform:none; box-shadow:var(--shadow-sm)}
+.btn-row{display:flex; flex-wrap:wrap; gap:12px}
+
+.tag{display:inline-flex; align-items:center; gap:6px; font:700 .66rem/1 var(--mono); letter-spacing:.08em; text-transform:uppercase; padding:6px 9px; border:2px solid var(--ink); border-radius:2px; background:var(--card)}
+.tag.fill{background:var(--ink); color:var(--paper)}
+.tag.pink{background:var(--shock); color:var(--ink)}
+.chip{display:inline-flex; align-items:center; gap:7px; font:800 .74rem/1 var(--mono); letter-spacing:.06em; padding:7px 11px; border:2px solid var(--ink); border-radius:2px; text-transform:uppercase}
+.chip.go{background:var(--go); color:#fff}
+.chip.stop{background:var(--stop); color:#fff}
+
+/* stat row (hero vitals) ------------------------------------- */
+.stats{display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-top:20px}
+.stat{border:var(--bw) solid var(--ink); background:var(--card); color:var(--ink); padding:14px; border-radius:2px; box-shadow:var(--shadow-xs)}
+.stat .n{font:900 1.8rem/1 "Helvetica Neue",Arial,sans-serif}
+.stat .l{font:700 .6rem/1.2 var(--mono); letter-spacing:.12em; text-transform:uppercase; color:var(--muted); margin-top:6px}
+@media (max-width:640px){ .stats{grid-template-columns:repeat(2,1fr)} }
+
+/* launcher grid (dashboard tiles) ---------------------------- */
+.grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:16px}
+.tile{
+  text-align:left; cursor:pointer; background:var(--card); color:var(--ink);
+  border:var(--bw) solid var(--ink); box-shadow:var(--shadow-sm); border-radius:2px;
+  padding:16px; display:flex; flex-direction:column; gap:10px; min-height:132px;
+  transition:transform .07s ease, box-shadow .07s ease;
+}
+.tile:hover{transform:translate(-2px,-2px); box-shadow:8px 8px 0 var(--ink)}
+.tile:active{transform:translate(3px,3px); box-shadow:1px 1px 0 var(--ink)}
+.tile .ti{width:30px;height:30px;color:var(--shock)}
+.tile .tt{font:900 1.05rem/1.05 "Helvetica Neue",Arial,sans-serif; text-transform:uppercase; letter-spacing:-.01em}
+.tile .td{font-size:.86rem; color:var(--muted); line-height:1.45}
+.tile .badge{margin-top:auto; align-self:flex-start; font:800 .62rem/1 var(--mono); letter-spacing:.08em; text-transform:uppercase; background:var(--shock); color:var(--ink); border:2px solid var(--ink); padding:5px 8px; border-radius:2px}
+
+/* section headers -------------------------------------------- */
+.head{margin-bottom:22px}
+.head .eyebrow{color:var(--grape); margin-bottom:10px}
+.head h1{font:var(--disp); text-transform:uppercase; letter-spacing:-.02em; margin-bottom:12px}
+.head .lede{color:#2b2730}
+
+/* pill selector (domain filters) ----------------------------- */
+.pills{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:18px}
+.pill{font:700 .76rem/1 var(--body); padding:8px 12px; border:2px solid var(--ink); background:var(--card); color:var(--ink); cursor:pointer; border-radius:2px; box-shadow:var(--shadow-xs)}
+.pill:hover{background:var(--paper)}
+.pill[aria-pressed="true"]{background:var(--ink); color:var(--paper)}
+
+/* prose (summaries / about) ---------------------------------- */
+.prose{max-width:66ch}
+.prose h3{font:800 1.15rem/1.2 var(--body); margin:1.4em 0 .5em}
+.prose ul{margin:.4em 0 1em; padding-left:1.1em}
+.prose li{margin:.3em 0}
+.prose .callout{border-left:6px solid var(--shock); background:var(--paper); padding:12px 16px; margin:1em 0; border-radius:0 4px 4px 0}
+.prose .callout .eyebrow{color:var(--grape); display:block; margin-bottom:6px}
+
+/* flashcards ------------------------------------------------- */
+.flip{perspective:1400px; margin:0 auto; max-width:560px}
+.flip-inner{position:relative; width:100%; min-height:280px; transform-style:preserve-3d; transition:transform .5s cubic-bezier(.2,.7,.2,1); cursor:pointer}
+.flip.on .flip-inner{transform:rotateY(180deg)}
+.face{position:absolute; inset:0; backface-visibility:hidden; border:var(--bw) solid var(--ink); border-radius:2px; padding:26px; display:flex; flex-direction:column; justify-content:center; box-shadow:var(--shadow)}
+.face.front{background:var(--card)}
+.face.back{background:var(--grape); color:#fff; transform:rotateY(180deg)}
+.face .kind{font:700 .64rem/1 var(--mono); letter-spacing:.14em; text-transform:uppercase; opacity:.7; margin-bottom:12px}
+.face .q{font:800 1.35rem/1.25 var(--body)}
+.face .a{font-size:1.06rem; line-height:1.5}
+.face .hint{margin-top:auto; padding-top:14px; font:700 .66rem/1 var(--mono); letter-spacing:.08em; opacity:.6; text-transform:uppercase}
+.deck-meta{display:flex; align-items:center; justify-content:space-between; margin:16px auto 0; max-width:560px; font:700 .8rem/1 var(--mono)}
+
+/* quiz + scenarios ------------------------------------------- */
+.q-stem{font:800 1.16rem/1.35 var(--body); margin-bottom:16px}
+.choices{display:flex; flex-direction:column; gap:10px; margin-bottom:8px}
+.choice{
+  display:flex; gap:12px; align-items:flex-start; text-align:left; width:100%;
+  background:var(--card); border:var(--bw) solid var(--ink); border-radius:2px;
+  padding:13px 15px; cursor:pointer; box-shadow:var(--shadow-xs); font-size:.98rem; line-height:1.4;
+  transition:transform .06s ease;
+}
+.choice:hover:not(:disabled){transform:translateX(3px)}
+.choice .letter{font:900 .95rem/1 var(--mono); flex:0 0 auto; width:26px;height:26px; display:grid; place-items:center; border:2px solid var(--ink); border-radius:50%}
+.choice[data-state="right"]{background:var(--go); color:#fff}
+.choice[data-state="right"] .letter{border-color:#fff}
+.choice[data-state="wrong"]{background:var(--stop); color:#fff}
+.choice[data-state="wrong"] .letter{border-color:#fff}
+.choice[data-state="dim"]{opacity:.55}
+.choice:disabled{cursor:default}
+.explain{border:var(--bw) solid var(--ink); border-radius:2px; padding:14px 16px; margin-top:14px; background:var(--paper)}
+.explain .eyebrow{color:var(--grape); display:block; margin-bottom:6px}
+.progress-line{display:flex; align-items:center; gap:12px; margin-bottom:16px; font:700 .8rem/1 var(--mono)}
+.bar-track{flex:1; height:12px; border:2px solid var(--ink); border-radius:99px; overflow:hidden; background:var(--card)}
+.bar-fill{height:100%; background:var(--shock); width:0%}
+
+/* terms ------------------------------------------------------ */
+.search{width:100%; font:600 1rem/1 var(--body); padding:13px 15px; border:var(--bw) solid var(--ink); border-radius:2px; box-shadow:var(--shadow-xs); background:var(--card)}
+.term{border-bottom:2px solid #e7d8e6; padding:14px 2px}
+.term:last-child{border-bottom:0}
+.term .t{font:800 1.02rem/1.2 var(--body)}
+.term .t .badge{font:700 .58rem/1 var(--mono); letter-spacing:.08em; text-transform:uppercase; margin-left:8px; color:var(--grape); border:2px solid var(--grape); padding:3px 6px; border-radius:2px; vertical-align:middle}
+.term .d{color:#2b2730; margin-top:5px; font-size:.96rem}
+
+/* SRS -------------------------------------------------------- */
+.boxes{display:grid; grid-template-columns:repeat(5,1fr); gap:10px; margin-bottom:20px}
+.lbox{border:var(--bw) solid var(--ink); border-radius:2px; padding:12px 8px; text-align:center; background:var(--card); box-shadow:var(--shadow-xs)}
+.lbox .n{font:900 1.5rem/1 "Helvetica Neue",Arial,sans-serif}
+.lbox .l{font:700 .56rem/1.2 var(--mono); letter-spacing:.06em; text-transform:uppercase; color:var(--muted); margin-top:5px}
+.lbox.due{background:var(--shock)}
+.rate-row{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:16px}
+
+/* exam simulator --------------------------------------------- */
+.exam-top{display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:16px}
+.timer{font:900 1.5rem/1 var(--mono); letter-spacing:.04em; border:var(--bw) solid var(--ink); padding:8px 14px; border-radius:2px; background:var(--ink); color:var(--paper)}
+.timer.warn{background:var(--stop); color:#fff; animation:pulse 1s steps(2) infinite}
+@keyframes pulse{50%{opacity:.55}}
+.qnav{display:flex; flex-wrap:wrap; gap:6px; margin:16px 0}
+.qdot{width:34px;height:34px; border:2px solid var(--ink); border-radius:2px; font:800 .8rem/1 var(--mono); cursor:pointer; background:var(--card); display:grid; place-items:center}
+.qdot[data-s="answered"]{background:var(--ink); color:var(--paper)}
+.qdot[data-s="current"]{background:var(--shock); color:var(--ink); box-shadow:2px 2px 0 var(--ink)}
+.qdot[data-s="flagged"]{background:var(--grape); color:#fff}
+.result-score{font:900 clamp(3rem,12vw,5.5rem)/0.9 "Helvetica Neue",Arial,sans-serif}
+.dbar{display:flex; align-items:center; gap:10px; margin:9px 0; font:700 .78rem/1 var(--mono)}
+.dbar .track{flex:1; height:16px; border:2px solid var(--ink); border-radius:2px; overflow:hidden; background:var(--card)}
+.dbar .fill{height:100%; background:var(--grape)}
+.dbar .lab{width:44%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+
+/* prime-mover matcher ---------------------------------------- */
+.match{display:grid; grid-template-columns:1fr 1fr; gap:12px}
+.mcol{display:flex; flex-direction:column; gap:10px}
+.mtok{text-align:left; padding:13px 14px; border:var(--bw) solid var(--ink); border-radius:2px; background:var(--card); cursor:pointer; box-shadow:var(--shadow-xs); font:700 .95rem/1.25 var(--body)}
+.mtok:hover:not(:disabled){transform:translateX(3px)}
+.mtok[data-s="sel"]{background:var(--shock); color:var(--ink)}
+.mtok[data-s="done"]{background:var(--go); color:#fff; cursor:default}
+.mtok[data-s="miss"]{background:var(--stop); color:#fff; animation:shake .3s}
+.mtok:disabled{cursor:default}
+@keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.mcol .colhead{font:700 .62rem/1 var(--mono); letter-spacing:.12em; text-transform:uppercase; color:var(--grape); margin-bottom:2px}
+
+/* crossword -------------------------------------------------- */
+.xw-wrap{display:flex; flex-direction:column; gap:20px}
+.xw-scroll{overflow:auto; padding-bottom:6px}
+.xw-grid{display:grid; gap:0; width:max-content; border:var(--bw) solid var(--ink); background:var(--ink)}
+.xw-cell{position:relative; width:34px;height:34px; background:var(--card); border:1px solid #c9b9c8}
+.xw-cell.void{background:var(--ink); border-color:var(--ink)}
+.xw-cell input{width:100%;height:100%; border:0; text-align:center; text-transform:uppercase; font:800 1rem/1 var(--body); background:transparent; color:var(--ink); padding:0}
+.xw-cell input:focus{background:var(--shock); outline:2px solid var(--ink); outline-offset:-2px}
+.xw-cell.ok input{background:var(--go); color:#fff}
+.xw-cell.bad input{background:#ffd9d6}
+.xw-num{position:absolute; top:1px; left:2px; font:700 .52rem/1 var(--mono)}
+.clues{display:grid; grid-template-columns:1fr 1fr; gap:22px}
+.clues h4{font:800 .9rem/1 var(--mono); letter-spacing:.1em; text-transform:uppercase; color:var(--grape); margin-bottom:10px; padding-bottom:6px; border-bottom:2px solid var(--ink)}
+.clues ol{margin:0; padding:0; list-style:none; display:flex; flex-direction:column; gap:8px}
+.clues li{font-size:.9rem; line-height:1.35; display:flex; gap:8px}
+.clues li b{font-family:var(--mono); flex:0 0 auto}
+@media (max-width:560px){ .clues{grid-template-columns:1fr} .xw-cell{width:30px;height:30px} }
+
+/* checklist (study guides) ----------------------------------- */
+.check{display:flex; gap:12px; align-items:flex-start; padding:9px 0; border-bottom:2px solid #efe1ee; cursor:pointer}
+.check:last-child{border-bottom:0}
+.check input{appearance:none; flex:0 0 auto; width:24px;height:24px; border:var(--bw) solid var(--ink); border-radius:2px; cursor:pointer; margin-top:1px; background:var(--card); position:relative}
+.check input:checked{background:var(--shock)}
+.check input:checked::after{content:"✓"; position:absolute; inset:0; display:grid; place-items:center; font-weight:900; color:var(--ink)}
+.check span{line-height:1.45}
+.check input:checked + span{opacity:.5; text-decoration:line-through}
+.guide-sec{margin-bottom:22px}
+.guide-sec h3{font:800 1.05rem/1.2 var(--body); margin-bottom:8px; display:flex; align-items:center; gap:8px}
+.hy{background:var(--paper); border:var(--bw) solid var(--ink); border-radius:2px; padding:14px 16px; margin:14px 0}
+.hy .eyebrow{color:var(--stop); display:block; margin-bottom:8px}
+.hy ul{margin:0; padding-left:1.1em}
+
+/* toast + easter egg ----------------------------------------- */
+.toast{position:fixed; left:50%; bottom:26px; transform:translateX(-50%) translateY(20px); opacity:0; background:var(--ink); color:var(--paper); border:var(--bw) solid var(--shock); box-shadow:6px 6px 0 var(--shock); padding:13px 18px; border-radius:2px; font:700 .85rem/1.3 var(--body); z-index:80; max-width:90vw; transition:opacity .25s, transform .25s; pointer-events:none}
+.toast.on{opacity:1; transform:translateX(-50%) translateY(0)}
+body.maxeffort{animation:tilt .18s steps(2) 6}
+@keyframes tilt{50%{transform:rotate(.4deg)}}
+
+/* empty states ----------------------------------------------- */
+.empty{text-align:center; padding:34px 18px; color:var(--muted)}
+.empty .ei{width:54px;height:54px;margin:0 auto 14px; color:var(--shock)}
+.empty h3{font:900 1.2rem/1.1 "Helvetica Neue",Arial,sans-serif; text-transform:uppercase; color:var(--ink); margin-bottom:8px}
+
+/* responsive ------------------------------------------------- */
+@media (max-width:860px){
+  .app{grid-template-columns:1fr}
+  .sidebar{position:fixed; z-index:50; width:min(84vw,320px); left:0; top:0; transform:translateX(-102%); transition:transform .25s ease}
+  body.nav-open .sidebar{transform:translateX(0)}
+  body.nav-open .backdrop{display:block}
+  .topbar{display:flex}
+  .stage{padding-top:22px}
+}
+@media print{
+  .sidebar,.topbar,.backdrop,.win-bar,.btn,.pills,.nav-foot{display:none !important}
+  .app{display:block}
+  body{background:#fff}
+  .window{box-shadow:none; border:2px solid #000; break-inside:avoid}
+}
+@media (prefers-reduced-motion:reduce){
+  *{transition:none !important; animation:none !important}
+  .flip-inner{transition:transform .001s !important}
+}
+</style>
+</head>
+<body>
+<div class="backdrop" id="backdrop" aria-hidden="true"></div>
+
+<header class="topbar">
+  <span class="glyph" id="mGlyph"></span>
+  <span class="word">SPOTTER</span>
+  <button class="burger" id="burger" aria-label="Open menu" aria-expanded="false">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+  </button>
+</header>
+
+<div class="app">
+  <aside class="sidebar" id="sidebar" aria-label="Study tools">
+    <div class="brand" id="brand" title="It counts your clicks. Try it.">
+      <div class="mark"><span class="glyph" id="brandGlyph"></span><span class="word">SPOTTER</span></div>
+      <div class="sub">// UNOFFICIAL NCSF-CPT PREP</div>
+    </div>
+    <nav class="nav" id="nav"></nav>
+    <div class="nav-foot">v1.0 · study aid<br>not affiliated with NCSF</div>
+  </aside>
+
+  <div class="main">
+    <main class="stage" id="stage" tabindex="-1"></main>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script>
+/* ============================================================
+   CONTENT — built from open exercise-science knowledge aligned
+   to the NCSF-CPT blueprint. Independent study aid, not NCSF's
+   own material. Verify specifics against the current textbook.
+   ============================================================ */
+
+const DOMAINS = [
+{
+  id:"anatomy", code:"D1", name:"Functional Anatomy & Physiology", short:"Anatomy & Physiology", icon:"splat",
+  blurb:"How the body is built and how it powers movement.",
+  summary:`<p>Everything a trainer programs runs through the musculoskeletal system: bones act as levers, joints as fulcrums, and skeletal muscle as the motor that pulls bone across joint. Muscle attaches by tendon, contracts, and produces force. It only ever pulls, never pushes, which is why muscles work in pairs around a joint.</p>
+  <h3>Muscle actions and roles</h3>
+  <p>A single muscle can play different roles depending on the movement. The <b>agonist</b> is the prime mover producing the action. The <b>antagonist</b> opposes it and controls the return. <b>Synergists</b> assist, and <b>stabilizers</b> (fixators) hold a joint steady so the prime mover can work. Contractions come in three flavors: <b>concentric</b> (muscle shortens under load, the lifting phase), <b>eccentric</b> (muscle lengthens under load, the lowering phase, where most soreness is generated), and <b>isometric</b> (tension with no length change, like a plank).</p>
+  <div class="callout"><span class="eyebrow">Sliding filament, briefly</span>Force is produced when myosin heads form cross-bridges on actin and pull. Calcium exposes the binding sites, and ATP is required to release each cross-bridge so the cycle can repeat. No ATP, no release, which is one reason rigor sets in without it.</div>
+  <h3>Fiber types</h3>
+  <p>Type I fibers are slow-twitch, fatigue-resistant, and built for endurance. Type IIa are fast and moderately fatigue-resistant. Type IIx are the fastest and most powerful but tire quickly. Training shifts capacity within these types, and the ratio a person is born with sets part of the ceiling for endurance versus power.</p>
+  <h3>Systems that keep it running</h3>
+  <p>The nervous system fires motor units, a motor neuron plus every fiber it controls, and recruits them by size, smallest first. The cardiorespiratory system delivers oxygen: cardiac output equals heart rate times stroke volume, and it climbs with intensity. The endocrine system tunes the response through hormones, testosterone and growth hormone driving repair and growth, cortisol mobilizing energy under stress, and insulin shuttling glucose into cells.</p>
+  <h3>Energy systems</h3>
+  <p>Three systems supply ATP on overlapping timelines. The <b>phosphagen (ATP-PC)</b> system fuels all-out efforts of roughly ten seconds using stored ATP and creatine phosphate, no oxygen needed. The <b>glycolytic</b> system covers hard efforts from about ten seconds to two minutes by breaking down glucose, producing lactate. The <b>oxidative</b> system handles anything longer, using carbohydrate and fat with oxygen. They all run at once; the mix just shifts with duration and intensity.</p>`,
+  guide:[
+    {h:"Muscle and movement", points:[
+      "Muscles only pull, so they work in opposing pairs around a joint",
+      "Agonist moves it, antagonist opposes, synergist assists, stabilizer holds",
+      "Concentric shortens, eccentric lengthens, isometric holds",
+      "Eccentric loading drives the most delayed-onset muscle soreness"]},
+    {h:"Contraction and fibers", points:[
+      "Sliding filament: cross-bridges pull actin, calcium unlocks, ATP releases",
+      "Type I = slow, endurance; Type IIa = fast, mixed; Type IIx = fastest, power",
+      "Motor unit = one neuron + its fibers; recruited smallest to largest"]},
+    {h:"Support systems", points:[
+      "Cardiac output = heart rate x stroke volume",
+      "Key hormones: testosterone and growth hormone build, cortisol breaks down, insulin stores",
+      "ATP-PC ~10s, glycolytic ~10s to 2min, oxidative for the long haul"]}
+  ],
+  highYield:["Match the energy system to the duration of the effort.","Know the four muscle roles and which contraction type does the lowering.","Cardiac output = HR x SV is a recurring gimme."],
+  mnemonic:{name:"Fiber speed", text:"I is for Idle (slow), II is for Zoom. Type I endures, Type II moves."}
+},
+{
+  id:"biomech", code:"D2", name:"Biomechanics & Kinesiology", short:"Biomechanics", icon:"cursor",
+  blurb:"Planes, levers, and reading a movement.",
+  summary:`<p>Biomechanics is how a trainer analyzes and describes movement precisely. It starts with three planes, each with its own motions.</p>
+  <h3>Planes and their motions</h3>
+  <ul>
+    <li><b>Sagittal</b> plane splits the body left and right. It owns flexion and extension. Think biceps curl, squat, walking forward.</li>
+    <li><b>Frontal</b> plane splits front and back. It owns abduction, adduction, and lateral flexion. Think side lateral raise, jumping jack.</li>
+    <li><b>Transverse</b> plane splits top and bottom. It owns rotation and horizontal ab/adduction. Think a cable chop or a swinging bat.</li>
+  </ul>
+  <div class="callout"><span class="eyebrow">Axis pairing (the classic trap)</span>Motion in a plane spins around the axis running perpendicular to it: sagittal motion around a mediolateral axis, frontal around an anteroposterior axis, transverse around a longitudinal axis.</div>
+  <h3>Levers</h3>
+  <p>Bones and joints form levers. What sits in the middle defines the class. In a <b>first-class</b> lever the fulcrum is in the middle (triceps extending the elbow, the head nodding). In a <b>second-class</b> lever the resistance is in the middle (a standing calf raise). In a <b>third-class</b> lever the effort is in the middle (a biceps curl), and this is by far the most common arrangement in the human body. Third-class levers trade force for speed and range of motion.</p>
+  <h3>Reading a rep</h3>
+  <p>To analyze any exercise, name the joint, the action at that joint, and the plane it happens in, then identify the prime mover. During the lowering phase the same prime mover usually works eccentrically to control the load against gravity. Force applied at a distance from a joint creates torque, which is why a longer lever arm makes the same weight feel heavier.</p>`,
+  guide:[
+    {h:"Planes", points:[
+      "Sagittal: flexion / extension (curls, squats)",
+      "Frontal: abduction / adduction / lateral flexion (lateral raise)",
+      "Transverse: rotation / horizontal ab-adduction (cable chop, bench press movement)",
+      "The axis is always perpendicular to the plane of motion"]},
+    {h:"Levers", points:[
+      "First class = fulcrum in the middle (triceps at the elbow)",
+      "Second class = resistance in the middle (calf raise)",
+      "Third class = effort in the middle, most common in the body (biceps curl)"]},
+    {h:"Movement analysis", points:[
+      "Name the joint, the action, the plane, then the prime mover",
+      "The lowering phase is usually the same muscle working eccentrically",
+      "Torque rises with the length of the lever arm"]}
+  ],
+  highYield:["Given an exercise, pick the correct plane and prime mover.","Third-class levers are the most common; know the calf-raise exception (second class).","Do not swap the plane with its axis."],
+  mnemonic:{name:"Lever order 1-2-3", text:"The middle component goes Fulcrum, Resistance, Effort. First = Fulcrum, second = Resistance, third = Effort. 'FRE.'"}
+},
+{
+  id:"nutrition", code:"D3", name:"Nutrition", short:"Nutrition", icon:"globe",
+  blurb:"Macros, energy balance, and staying in your lane.",
+  summary:`<p>Test-takers consistently report more nutrition than they expected, so treat it as a major domain rather than an afterthought.</p>
+  <h3>The macronutrients</h3>
+  <p>Three macros supply energy: carbohydrate at 4 kcal per gram, protein at 4, and fat at 9. Alcohol, not a nutrient the body needs, still carries 7 kcal per gram. Carbohydrate is the preferred fuel for higher-intensity work and refills muscle glycogen. Protein supplies amino acids for repair and growth; general needs sit near 0.8 g/kg, while active people trend higher, roughly 1.2 to 2.0 g/kg depending on training. Fat is essential for hormones, cell membranes, and fat-soluble vitamin absorption.</p>
+  <div class="callout"><span class="eyebrow">Energy balance</span>Weight change follows energy in versus energy out. A deficit drives loss, a surplus drives gain. Total daily energy expenditure is basal metabolic rate plus the thermic effect of food plus activity, and BMR is the largest slice for most people.</div>
+  <h3>The details clients ask about</h3>
+  <p>Glycemic index ranks how quickly a carbohydrate raises blood glucose; lower-GI choices give steadier energy. Hydration matters because even mild dehydration hurts performance, so fluids go before, during, and after training. Micronutrients, the vitamins and minerals, do not supply energy but run the machinery, and iron, calcium, and vitamin D are common shortfalls. Nutrient timing has a role for athletes, with carbohydrate and protein after hard sessions aiding recovery, though total daily intake matters more than the clock for most clients.</p>
+  <h3>Where the line is</h3>
+  <p>A CPT teaches general healthy-eating guidance and the science above. Building individualized meal plans, prescribing diets for a medical condition, or diagnosing a nutrient deficiency belongs to a registered dietitian. Knowing that boundary is itself tested.</p>`,
+  guide:[
+    {h:"Energy math", points:[
+      "Carbohydrate 4, protein 4, fat 9, alcohol 7 kcal per gram",
+      "Deficit loses weight, surplus gains it",
+      "TDEE = BMR + thermic effect of food + activity; BMR is the biggest piece"]},
+    {h:"The macros in practice", points:[
+      "Carbohydrate fuels intensity and refills glycogen",
+      "Protein ~0.8 g/kg general, ~1.2 to 2.0 g/kg for active people",
+      "Fat is essential for hormones and fat-soluble vitamin absorption",
+      "Fluids before, during, and after training"]},
+    {h:"Scope of practice", points:[
+      "Teach general guidance and the science",
+      "Do not write individualized meal plans or clinical diets",
+      "Refer medical nutrition needs to a registered dietitian"]}
+  ],
+  highYield:["Memorize 4-4-9 and the 7 for alcohol.","Energy balance beats any single food rule for weight change.","Meal plans and clinical diets are outside CPT scope."],
+  mnemonic:{name:"Calories per gram", text:"'4, 4, 9, and booze is 7.' Carbs and protein 4, fat 9, alcohol 7."}
+},
+{
+  id:"assessment", code:"D4", name:"Health & Fitness Assessment", short:"Assessment", icon:"sparkle",
+  blurb:"Screen first, measure smart, order it right.",
+  summary:`<p>Assessment protects the client and gives you a baseline to program from. It starts before any exercise.</p>
+  <h3>Screen before you sweat</h3>
+  <p>Preparticipation screening identifies who needs medical clearance before starting. A common tool is the PAR-Q+, a short self-report questionnaire. Broader models look at current activity level, known cardiovascular, metabolic, or renal disease, and any signs or symptoms of disease to decide whether physician clearance is warranted. When in doubt, refer for clearance.</p>
+  <h3>Vital signs and body composition</h3>
+  <p>Resting heart rate and blood pressure are quick health markers. For blood pressure, current guidelines flag 120 to 129 over under 80 as elevated and 130 over 80 and up as hypertension, though some older materials still use higher cutoffs, so confirm which set your exam uses. Rating of perceived exertion, on the 6 to 20 Borg scale or the 0 to 10 scale, lets clients self-report intensity. Body composition can be estimated by BMI (a screening ratio, not a body-fat measure), skinfold calipers, circumference measurements, and waist-to-hip ratio for fat-distribution risk.</p>
+  <div class="callout"><span class="eyebrow">Order matters</span>Sequence assessments so earlier ones do not skew later ones. Take resting measures first, then body composition, then cardiorespiratory testing, then muscular fitness, and flexibility last, so fatigue does not distort the numbers.</div>
+  <h3>Fitness tests</h3>
+  <p>Cardiorespiratory fitness is captured by VO2 max in mL/kg/min, estimated through submaximal tests like the YMCA step test, the Rockport walk, or a 1.5-mile run. Muscular strength shows up as a one-rep max or a predicted max from a submaximal set; muscular endurance through tests like the push-up or curl-up. Flexibility is often screened with the sit-and-reach.</p>`,
+  guide:[
+    {h:"Screening", points:[
+      "PAR-Q+ is a common self-report screen",
+      "Consider current activity, known disease, and signs or symptoms",
+      "When uncertain, refer for physician clearance"]},
+    {h:"Measures", points:[
+      "Elevated BP starts around 120 to 129 / under 80 (verify your exam's cutoffs)",
+      "RPE uses the 6 to 20 Borg scale or the 0 to 10 scale",
+      "BMI screens weight-for-height; it is not a body-fat measure",
+      "Waist-to-hip ratio flags fat-distribution risk"]},
+    {h:"Test order", points:[
+      "Resting first, then body composition",
+      "Cardiorespiratory before muscular fitness",
+      "Flexibility last so fatigue does not skew it",
+      "VO2 max is expressed in mL/kg/min"]}
+  ],
+  highYield:["Know the assessment order and why flexibility goes last.","BMI is a screen, not a fat measurement.","Refer for clearance when screening raises a flag."],
+  mnemonic:{name:"Assessment order", text:"Rest, Body, Cardio, Muscle, Stretch. 'Really Big Cats Move Slow.'"}
+},
+{
+  id:"programming", code:"D5", name:"Exercise Programming", short:"Programming", icon:"splat",
+  blurb:"Principles, acute variables, and periodization.",
+  summary:`<p>Program design turns goals into a repeatable plan grounded in a few durable principles.</p>
+  <h3>Training principles</h3>
+  <p><b>Overload</b> means the body must be challenged beyond its habit to adapt. <b>Progression</b> means that challenge increases over time. <b>Specificity</b>, the SAID principle (specific adaptation to imposed demands), means you get better at what you train. <b>Reversibility</b> means fitness fades when training stops. <b>Individuality</b> means people respond differently. Selye's general adaptation syndrome frames the response as alarm, resistance, then exhaustion if recovery never comes.</p>
+  <div class="callout"><span class="eyebrow">FITT, then FITT-VP</span>Frequency, Intensity, Time, and Type describe any program. Adding Volume and Progression turns it into a plan that keeps working past week three.</div>
+  <h3>Acute variables and the load continuum</h3>
+  <p>Reps, sets, load, rest, and tempo are the dials. Load and reps sit on a continuum. Strength and power use heavy loads (about 85 percent of a one-rep max and up) for low reps with long rest of two to five minutes. Hypertrophy uses moderate loads (roughly 67 to 85 percent) for 6 to 12 reps with shorter rest. Muscular endurance uses lighter loads for 12-plus reps with brief rest. Training systems layer on top: circuits keep rest short, supersets pair exercises, drop sets extend a set, pyramids ramp load, and split routines divide the week by body part or movement.</p>
+  <h3>Periodization and cardio</h3>
+  <p>Periodization organizes training across time into a macrocycle (the big block, often a year), mesocycles (weeks to months), and microcycles (usually a week). Linear periodization shifts gradually from high volume toward high intensity; undulating periodization varies the stimulus within a week. On the cardio side, the Karvonen method sets target heart rate from heart-rate reserve: subtract resting from maximum heart rate, take a percentage, then add resting back. Estimated max is often 220 minus age, a rough figure. Warm up first, place the most demanding or technical work early, and cool down at the end.</p>`,
+  guide:[
+    {h:"Principles", points:[
+      "Overload, then progressive overload over time",
+      "Specificity (SAID): you adapt to what you impose",
+      "Reversibility: stop training and it fades",
+      "GAS: alarm, resistance, exhaustion"]},
+    {h:"Acute variables", points:[
+      "Strength/power: ~85%+ 1RM, low reps, 2 to 5 min rest",
+      "Hypertrophy: ~67 to 85%, 6 to 12 reps, moderate rest",
+      "Endurance: lighter load, 12+ reps, short rest",
+      "Systems: circuit, superset, drop set, pyramid, split"]},
+    {h:"Periodization & cardio", points:[
+      "Macrocycle > mesocycle > microcycle",
+      "Linear ramps volume to intensity; undulating varies within the week",
+      "Karvonen: ((HRmax - HRrest) x %) + HRrest",
+      "Warm up, hardest work early, cool down"]}
+  ],
+  highYield:["Match load and reps to the goal on the continuum.","Karvonen adds resting HR back at the end; do not forget it.","Order a session: warm-up, power/skill, strength, then conditioning."],
+  mnemonic:{name:"Program checklist", text:"FITT: Frequency, Intensity, Time, Type. Add Volume and Progression so it keeps working."}
+},
+{
+  id:"special", code:"D6", name:"Special Populations & Flexibility", short:"Special Pops", icon:"globe",
+  blurb:"Sensible modifications and stretching that fits.",
+  summary:`<p>Most clients bring something to work around. The theme across every group is the same: screen, start conservative, progress slowly, and refer anything medical.</p>
+  <h3>Common populations</h3>
+  <ul>
+    <li><b>Older adults</b>: prioritize balance, functional strength, and joint-friendly ranges; expect slower progression.</li>
+    <li><b>Youth</b>: focus on skill, technique, and fun; resistance training is safe with good coaching and appropriate loads.</li>
+    <li><b>Pregnancy</b>: generally continue activity with clearance; avoid supine positions later in pregnancy, avoid overheating, and skip high fall-risk work.</li>
+    <li><b>Hypertension</b>: emphasize steady aerobic work, avoid the Valsalva maneuver and heavy isometrics that spike pressure.</li>
+    <li><b>Type 2 diabetes</b>: exercise improves glucose control; watch for hypoglycemia, especially with insulin, and check that clients have fuel on hand.</li>
+    <li><b>Arthritis and osteoporosis</b>: choose low-impact, pain-free ranges; for osteoporosis, favor weight-bearing loading and avoid loaded spinal flexion.</li>
+  </ul>
+  <div class="callout"><span class="eyebrow">The trainer's job</span>You modify exercise and monitor response. You do not treat the condition. Clearance and medical questions go back to the physician.</div>
+  <h3>Flexibility training</h3>
+  <p>Four methods, each with a place. <b>Static</b> stretching holds a lengthened position and fits the cool-down. <b>Dynamic</b> stretching moves through a range and fits the warm-up. <b>Ballistic</b> uses bouncing and carries higher risk, reserved for advanced or sport-specific use. <b>PNF</b> (proprioceptive neuromuscular facilitation) pairs contraction and relaxation to gain range and tends to be most effective for improving flexibility.</p>`,
+  guide:[
+    {h:"Population themes", points:[
+      "Screen, start easy, progress slowly, refer medical issues",
+      "Older adults: balance and functional strength",
+      "Pregnancy: clearance, avoid supine late, avoid overheating",
+      "Hypertension: no Valsalva, careful with heavy isometrics",
+      "Diabetes: watch for hypoglycemia, keep fuel available",
+      "Osteoporosis: weight-bearing, avoid loaded spinal flexion"]},
+    {h:"Flexibility", points:[
+      "Static for the cool-down",
+      "Dynamic for the warm-up",
+      "Ballistic is higher risk, advanced use only",
+      "PNF is the most effective for range gains"]}
+  ],
+  highYield:["Dynamic warms up, static cools down.","No Valsalva for hypertensive clients.","Trainers modify and monitor; they do not treat."],
+  mnemonic:{name:"Stretch timing", text:"Dynamic to start, static to finish. Ballistic bounces (be careful), PNF for the biggest gains."}
+},
+{
+  id:"professional", code:"D7", name:"Professional Practice & Safety", short:"Professional", icon:"sparkle",
+  blurb:"Scope, behavior change, law, and emergencies.",
+  summary:`<p>The business and conduct side is heavily tested because it protects clients and trainers alike.</p>
+  <h3>Scope and conduct</h3>
+  <p>A CPT designs and delivers exercise, coaches technique, and supports healthy habits. Outside the lane: diagnosing, prescribing or adjusting medication, treating injuries or providing rehab, and writing clinical diets. When a client's need falls outside scope, refer to the right professional. A code of conduct covers honesty, confidentiality, and professional boundaries.</p>
+  <h3>Behavior change</h3>
+  <p>The transtheoretical model describes readiness as stages: precontemplation, contemplation, preparation, action, and maintenance. Matching your approach to the stage beats pushing everyone the same way. Self-efficacy, a person's belief they can succeed, predicts follow-through, and small wins build it. Goals work best when they are SMART: specific, measurable, attainable, relevant, and time-bound. Intrinsic motivation, doing it because it is satisfying, outlasts external rewards.</p>
+  <div class="callout"><span class="eyebrow">Legal basics</span>Negligence is failing to meet the standard of care and causing harm. Informed consent tells clients the risks before they agree. Waivers and releases, health-history documentation, confidentiality, and professional liability insurance are the trainer's guardrails.</div>
+  <h3>Safety and emergencies</h3>
+  <p>Have an emergency action plan and know your role in it. Keep current CPR and AED skills. Recognize warning signs like chest pain, dizziness, or unusual shortness of breath and stop the session. For minor soft-tissue injuries, the classic response is rest, ice, compression, and elevation. Activate emergency services for anything beyond first aid.</p>`,
+  guide:[
+    {h:"Scope", points:[
+      "Design exercise, coach form, support habits",
+      "Do not diagnose, prescribe meds, treat injury, or write clinical diets",
+      "Refer out when the need exceeds scope"]},
+    {h:"Behavior change", points:[
+      "TTM stages: precontemplation to maintenance",
+      "Build self-efficacy with achievable wins",
+      "Set SMART goals",
+      "Intrinsic motivation lasts longer than rewards"]},
+    {h:"Law & safety", points:[
+      "Negligence = failing the standard of care and causing harm",
+      "Use informed consent and health-history documentation",
+      "Carry professional liability insurance",
+      "Keep an EAP, current CPR/AED, and know the warning signs"]}
+  ],
+  highYield:["Know exactly what is outside CPT scope.","Match your coaching to the client's stage of change.","Negligence, informed consent, and the EAP are recurring items."],
+  mnemonic:{name:"Stages of change", text:"'Please Come Prepare And Maintain.' Precontemplation, Contemplation, Preparation, Action, Maintenance."}
+}
+];
+
+const TERMS = [
+{term:"Concentric contraction", domain:"anatomy", def:"Muscle action where the muscle shortens under tension, such as the lifting phase of a curl."},
+{term:"Eccentric contraction", domain:"anatomy", def:"Muscle action where the muscle lengthens under tension, such as the lowering phase; drives most muscle soreness."},
+{term:"Isometric contraction", domain:"anatomy", def:"Muscle produces tension with no change in length, such as holding a plank."},
+{term:"Agonist", domain:"anatomy", def:"The prime mover, the muscle chiefly responsible for a joint action."},
+{term:"Antagonist", domain:"anatomy", def:"The muscle that opposes the agonist and controls the opposite action."},
+{term:"Synergist", domain:"anatomy", def:"A muscle that assists the prime mover in producing a movement."},
+{term:"Stabilizer", domain:"anatomy", def:"A muscle that fixes a joint or segment so the prime mover can act; also called a fixator."},
+{term:"Motor unit", domain:"anatomy", def:"A single motor neuron plus all the muscle fibers it controls."},
+{term:"Sliding filament theory", domain:"anatomy", def:"Model of contraction where myosin cross-bridges pull actin filaments, shortening the muscle."},
+{term:"Type I fiber", domain:"anatomy", def:"Slow-twitch, fatigue-resistant muscle fiber suited to endurance."},
+{term:"Type II fiber", domain:"anatomy", def:"Fast-twitch fiber built for power and speed but quicker to fatigue."},
+{term:"Cardiac output", domain:"anatomy", def:"Blood pumped per minute; equals heart rate times stroke volume."},
+{term:"Stroke volume", domain:"anatomy", def:"The volume of blood ejected by the heart in a single beat."},
+{term:"Phosphagen system", domain:"anatomy", def:"ATP-PC system fueling maximal efforts up to about ten seconds without oxygen."},
+{term:"Glycolytic system", domain:"anatomy", def:"Energy system breaking down glucose for efforts of roughly ten seconds to two minutes, producing lactate."},
+{term:"Oxidative system", domain:"anatomy", def:"Aerobic system using carbohydrate and fat with oxygen to fuel prolonged activity."},
+{term:"Cortisol", domain:"anatomy", def:"Stress hormone that mobilizes energy and, when chronically high, can impair recovery."},
+{term:"Insulin", domain:"anatomy", def:"Hormone that shuttles glucose from the blood into cells."},
+
+{term:"Sagittal plane", domain:"biomech", def:"Divides the body into left and right; the plane of flexion and extension."},
+{term:"Frontal plane", domain:"biomech", def:"Divides the body into front and back; the plane of abduction and adduction."},
+{term:"Transverse plane", domain:"biomech", def:"Divides the body into top and bottom; the plane of rotation."},
+{term:"Flexion", domain:"biomech", def:"Decreasing the angle at a joint, as in bending the elbow."},
+{term:"Extension", domain:"biomech", def:"Increasing the angle at a joint, as in straightening the knee."},
+{term:"Abduction", domain:"biomech", def:"Moving a limb away from the body's midline."},
+{term:"Adduction", domain:"biomech", def:"Moving a limb toward the body's midline."},
+{term:"First-class lever", domain:"biomech", def:"Lever with the fulcrum between force and resistance, such as the triceps at the elbow."},
+{term:"Second-class lever", domain:"biomech", def:"Lever with the resistance between fulcrum and force, such as a standing calf raise."},
+{term:"Third-class lever", domain:"biomech", def:"Lever with the effort between fulcrum and resistance; most common in the body, as in a biceps curl."},
+{term:"Torque", domain:"biomech", def:"Rotational force; increases as the lever arm lengthens."},
+{term:"Kinetic chain", domain:"biomech", def:"The linked system of joints and segments working together in movement."},
+
+{term:"Carbohydrate", domain:"nutrition", def:"Macronutrient providing 4 kcal per gram; the preferred fuel for higher-intensity exercise."},
+{term:"Protein", domain:"nutrition", def:"Macronutrient providing 4 kcal per gram; supplies amino acids for repair and growth."},
+{term:"Fat", domain:"nutrition", def:"Macronutrient providing 9 kcal per gram; essential for hormones and fat-soluble vitamin absorption."},
+{term:"Energy balance", domain:"nutrition", def:"The relationship of calories consumed to calories expended, which governs weight change."},
+{term:"Basal metabolic rate", domain:"nutrition", def:"Calories the body burns at rest to stay alive; the largest part of daily expenditure."},
+{term:"TDEE", domain:"nutrition", def:"Total daily energy expenditure: BMR plus the thermic effect of food plus activity."},
+{term:"Thermic effect of food", domain:"nutrition", def:"Energy used to digest, absorb, and process the food you eat."},
+{term:"Glycemic index", domain:"nutrition", def:"A ranking of how quickly a carbohydrate raises blood glucose."},
+{term:"Micronutrient", domain:"nutrition", def:"Vitamins and minerals needed in small amounts; they supply no energy."},
+{term:"Complete protein", domain:"nutrition", def:"A protein source containing all nine essential amino acids."},
+
+{term:"PAR-Q+", domain:"assessment", def:"Physical Activity Readiness Questionnaire, a self-report screen for exercise readiness."},
+{term:"Risk stratification", domain:"assessment", def:"Sorting clients by health risk to decide whether medical clearance is needed."},
+{term:"Blood pressure", domain:"assessment", def:"Force of blood on artery walls, reported as systolic over diastolic in mmHg."},
+{term:"Rating of perceived exertion", domain:"assessment", def:"A client's self-reported intensity, on the 6 to 20 Borg scale or a 0 to 10 scale."},
+{term:"Body mass index", domain:"assessment", def:"Weight-for-height ratio used as a screening tool, not a body-fat measurement."},
+{term:"Skinfold measurement", domain:"assessment", def:"Caliper estimate of body fat from subcutaneous fat at set sites."},
+{term:"Waist-to-hip ratio", domain:"assessment", def:"Waist divided by hip circumference; flags fat-distribution health risk."},
+{term:"VO2 max", domain:"assessment", def:"Maximum rate of oxygen use, in mL/kg/min; the gold-standard cardio fitness measure."},
+{term:"One-rep max", domain:"assessment", def:"The most weight a person can lift once with good form; a strength benchmark."},
+{term:"Submaximal test", domain:"assessment", def:"A test below all-out effort used to estimate a maximum such as VO2 max."},
+
+{term:"Overload", domain:"programming", def:"Challenging the body beyond its normal demand to force adaptation."},
+{term:"Progressive overload", domain:"programming", def:"Gradually increasing the training stimulus over time to keep adapting."},
+{term:"SAID principle", domain:"programming", def:"Specific Adaptation to Imposed Demands; you adapt to exactly what you train."},
+{term:"Specificity", domain:"programming", def:"Training adaptations are specific to the type of demand placed on the body."},
+{term:"Reversibility", domain:"programming", def:"Loss of fitness gains when training stops; use it or lose it."},
+{term:"FITT principle", domain:"programming", def:"Frequency, Intensity, Time, and Type, the framework for structuring exercise."},
+{term:"Periodization", domain:"programming", def:"Planned variation of training over time to manage adaptation and recovery."},
+{term:"Macrocycle", domain:"programming", def:"The largest training block, often about a year."},
+{term:"Mesocycle", domain:"programming", def:"A training block of several weeks to months within a macrocycle."},
+{term:"Microcycle", domain:"programming", def:"The shortest training block, usually a week."},
+{term:"Karvonen method", domain:"programming", def:"Target heart rate from heart-rate reserve: ((HRmax minus HRrest) times intensity) plus HRrest."},
+{term:"General adaptation syndrome", domain:"programming", def:"Selye's stress response: alarm, resistance, then exhaustion without recovery."},
+{term:"Superset", domain:"programming", def:"Two exercises performed back to back with little or no rest between."},
+
+{term:"Valsalva maneuver", domain:"special", def:"Forced exhalation against a closed airway that spikes blood pressure; risky for hypertensive clients."},
+{term:"Static stretching", domain:"special", def:"Holding a lengthened position; best suited to the cool-down."},
+{term:"Dynamic stretching", domain:"special", def:"Moving through a range of motion to prepare for activity; best for the warm-up."},
+{term:"Ballistic stretching", domain:"special", def:"Using bouncing momentum to stretch; higher risk and for advanced use only."},
+{term:"PNF stretching", domain:"special", def:"Proprioceptive neuromuscular facilitation; contract-relax technique that is highly effective for range."},
+{term:"Hypoglycemia", domain:"special", def:"Low blood glucose; a risk during exercise for clients using insulin."},
+
+{term:"Scope of practice", domain:"professional", def:"The boundary of services a trainer is qualified and permitted to provide."},
+{term:"Transtheoretical model", domain:"professional", def:"Stages-of-change model of readiness, from precontemplation to maintenance."},
+{term:"Self-efficacy", domain:"professional", def:"A person's belief in their ability to succeed at a task, which predicts follow-through."},
+{term:"SMART goal", domain:"professional", def:"A goal that is Specific, Measurable, Attainable, Relevant, and Time-bound."},
+{term:"Negligence", domain:"professional", def:"Failing to meet the standard of care and causing harm as a result."},
+{term:"Informed consent", domain:"professional", def:"A client's agreement to participate after being told the risks involved."},
+{term:"Standard of care", domain:"professional", def:"The level of skill and caution a reasonably competent trainer would provide."},
+{term:"Emergency action plan", domain:"professional", def:"A written plan defining roles and steps for handling an emergency."},
+{term:"RICE", domain:"professional", def:"Rest, Ice, Compression, Elevation; first-aid response for minor soft-tissue injury."},
+{term:"Intrinsic motivation", domain:"professional", def:"Doing an activity for its own satisfaction; tends to outlast external rewards."}
+];
+
+const QUESTIONS = [
+{"d":"anatomy","q":"Which energy system is the primary contributor during a maximal 5-second sprint?","c":["Oxidative fat system","Glycolytic lactate system","Phosphagen (ATP-PC) system","Lipolytic fat system"],"a":2,"why":"The phosphagen system uses stored ATP and creatine phosphate to fuel all-out efforts of roughly ten seconds or less, with no oxygen required."},
+{"d":"anatomy","q":"During the lowering phase of a biceps curl, the biceps is performing what type of contraction?","c":["Concentric","Eccentric","Isometric","Isokinetic"],"a":1,"why":"The muscle lengthens while still under tension to control the weight against gravity, which is an eccentric contraction."},
+{"d":"anatomy","q":"A motor unit consists of:","c":["A single whole muscle and its attaching tendon","One motor neuron and all the fibers it controls","A group of fast-twitch fibers contracting together","The neuromuscular junction and nothing more"],"a":1,"why":"A motor unit is a single motor neuron together with every muscle fiber it innervates."},
+{"d":"anatomy","q":"Cardiac output is best described as:","c":["Heart rate times stroke volume","Stroke volume divided by heart rate","Blood pressure times heart rate","The amount of blood per beat"],"a":0,"why":"Cardiac output equals heart rate multiplied by stroke volume, the blood pumped per minute."},
+{"d":"anatomy","q":"Which fiber type is most fatigue-resistant and best suited to endurance work?","c":["Type IIx","Type IIa","Type I","Type III"],"a":2,"why":"Type I fibers are slow-twitch, aerobic, and highly fatigue-resistant, making them ideal for endurance."},
+{"d":"anatomy","q":"In the sliding filament theory, what is required to release the myosin cross-bridge from actin?","c":["Calcium","ATP","Sodium","Lactate"],"a":1,"why":"ATP binds the myosin head and allows it to detach from actin so the cycle can continue. Calcium exposes the binding site but does not release the bridge."},
+{"d":"anatomy","q":"Which muscle acts as the antagonist during elbow flexion?","c":["Biceps brachii","Brachialis","Triceps brachii","Deltoid"],"a":2,"why":"During elbow flexion the triceps opposes the movement, so it is the antagonist."},
+{"d":"anatomy","q":"Which hormone is primarily responsible for shuttling glucose from the blood into cells?","c":["Cortisol","Adrenaline","Insulin","Testosterone"],"a":2,"why":"Insulin promotes the uptake of glucose from the bloodstream into cells."},
+{"d":"anatomy","q":"The glycolytic energy system predominates during efforts lasting approximately:","c":["0 to 3 seconds","10 seconds to 2 minutes","5 to 10 minutes","Over 30 minutes"],"a":1,"why":"Glycolysis fuels high-intensity efforts from roughly ten seconds up to about two minutes."},
+{"d":"anatomy","q":"A muscle that holds a joint steady so the prime mover can act is called a:","c":["Synergist","Agonist","Antagonist","Stabilizer"],"a":3,"why":"A stabilizer, or fixator, steadies a joint or segment so the prime mover can produce the intended movement."},
+{"d":"anatomy","q":"Which of the following best explains delayed-onset muscle soreness after a new workout?","c":["Lactic acid pooling in the muscle","Eccentric loading causing tiny muscle damage","Dehydration during the session","Depleted creatine phosphate"],"a":1,"why":"DOMS is largely linked to eccentric actions that cause microtrauma to muscle fibers, not lingering lactic acid."},
+{"d":"anatomy","q":"Motor units are generally recruited in what order as force demand rises?","c":["Largest to smallest","Randomly","Smallest to largest","Fast fibers first"],"a":2,"why":"The size principle states that smaller, lower-threshold motor units are recruited first, with larger units added as demand increases."},
+{"d":"biomech","q":"A dumbbell lateral raise occurs primarily in which plane of motion?","c":["Sagittal","Frontal","Transverse","Oblique"],"a":1,"why":"Raising the arms out to the sides is abduction, which happens in the frontal plane."},
+{"d":"biomech","q":"A standing barbell biceps curl is an example of which lever class?","c":["First class","Second class","Third class","Fourth class"],"a":2,"why":"The effort (biceps) sits between the fulcrum (elbow) and the resistance (weight in the hand), making it a third-class lever."},
+{"d":"biomech","q":"Which movement takes place in the sagittal plane?","c":["Arm abduction","Trunk rotation","Knee flexion","Hip adduction"],"a":2,"why":"Knee flexion is a decrease in joint angle occurring in the sagittal plane."},
+{"d":"biomech","q":"A standing calf raise is best classified as which lever?","c":["A first-class lever","A second-class lever","A third-class lever","Not a lever"],"a":1,"why":"In a calf raise the resistance (body weight) is between the fulcrum (ball of the foot) and the effort (Achilles pull), a second-class lever."},
+{"d":"biomech","q":"Rotational movements such as a cable wood-chop occur primarily in the:","c":["The sagittal plane","The frontal plane","The transverse plane","The coronal plane"],"a":2,"why":"Rotation happens in the transverse plane, which divides the body into top and bottom."},
+{"d":"biomech","q":"Torque at a joint increases when:","c":["The lever arm gets shorter","The lever arm gets longer","The muscle relaxes","Body weight decreases"],"a":1,"why":"Torque is force times the length of the lever arm, so a longer lever arm produces more torque for the same force."},
+{"d":"biomech","q":"Which axis does motion in the frontal plane rotate around?","c":["The longitudinal axis","Mediolateral axis","Anteroposterior axis","Vertical (up-down) axis"],"a":2,"why":"Frontal-plane motion rotates around the anteroposterior axis, which runs front to back."},
+{"d":"biomech","q":"Moving a limb toward the midline of the body is called:","c":["Abduction","Adduction","Extension","Rotation"],"a":1,"why":"Adduction brings a limb toward the body's midline."},
+{"d":"biomech","q":"When analyzing a squat's downward phase, the quadriceps are:","c":["Working concentrically to straighten the knee","Working eccentrically to control knee flexion","Holding an isometric contraction throughout","Not really involved in the descent"],"a":1,"why":"On the way down the knees flex while the quads lengthen under load to control the descent, an eccentric action."},
+{"d":"biomech","q":"Which lever class is most common in the human body?","c":["First class","Second class","Third class","Equally common"],"a":2,"why":"Third-class levers, with the effort in the middle, dominate the human body and favor speed and range of motion over force."},
+{"d":"biomech","q":"Horizontal adduction of the shoulder is the main action in which exercise?","c":["The barbell back squat lift","The dumbbell bench press","The wide-grip lat pulldown","The standing calf raise"],"a":1,"why":"Pressing the arms together across the chest is horizontal adduction, the key action in a bench press."},
+{"d":"nutrition","q":"How many kilocalories are in one gram of fat?","c":["4","7","9","2"],"a":2,"why":"Fat provides 9 kcal per gram, more than double carbohydrate or protein."},
+{"d":"nutrition","q":"A client wants to lose body fat. The most fundamental requirement is:","c":["Eliminating all carbohydrates","A sustained caloric deficit","Eating only after workouts","Taking a fat-burner supplement"],"a":1,"why":"Fat loss requires expending more energy than is consumed. A sustained caloric deficit is the core requirement."},
+{"d":"nutrition","q":"Which macronutrient is the body's preferred fuel for high-intensity exercise?","c":["Dietary fat","Dietary protein","Carbohydrate","Alcohol (ethanol)"],"a":2,"why":"Carbohydrate is the preferred and most efficient fuel for higher-intensity work and refills muscle glycogen."},
+{"d":"nutrition","q":"A general daily protein recommendation for an active adult falls around:","c":["0.2 to 0.4 g/kg","1.2 to 2.0 g/kg","3.5 to 4.5 g/kg","0.1 g/kg"],"a":1,"why":"Active people generally need more than the 0.8 g/kg baseline, commonly cited around 1.2 to 2.0 g/kg."},
+{"d":"nutrition","q":"The largest component of total daily energy expenditure for most people is:","c":["Exercise activity","The thermic effect","Basal metabolic rate","Daily fidgeting"],"a":2,"why":"Basal metabolic rate, the energy to keep the body running at rest, is usually the biggest slice of daily expenditure."},
+{"d":"nutrition","q":"A client asks you to write a detailed meal plan to manage their newly diagnosed diabetes. You should:","c":["Write the plan using an online calculator","Refer them to a registered dietitian","Tell them to just cut sugar","Prescribe a low-carb diet"],"a":1,"why":"Individualized clinical nutrition for a medical condition is outside CPT scope and belongs to a registered dietitian."},
+{"d":"nutrition","q":"One gram of alcohol provides how many kilocalories?","c":["4","7","9","0"],"a":1,"why":"Alcohol carries 7 kcal per gram even though it is not an essential nutrient."},
+{"d":"nutrition","q":"Glycemic index measures:","c":["The calories in a food","How fast a carbohydrate raises blood sugar","The protein quality of a food","The fat content of a food"],"a":1,"why":"Glycemic index ranks how rapidly a carbohydrate-containing food raises blood sugar."},
+{"d":"nutrition","q":"Which statement about hydration and performance is accurate?","c":["Thirst reliably signals hydration","Even mild dehydration can impair performance","Water intake does not matter","Only marathoners need fluids"],"a":1,"why":"Performance declines even with modest dehydration, so fluids should be taken before, during, and after training."},
+{"d":"nutrition","q":"A complete protein is one that:","c":["Contains all nine essential amino acids","Contains absolutely no dietary fat at all","Comes only from animal-based sources","Is naturally very high in fiber"],"a":0,"why":"A complete protein supplies all nine essential amino acids in adequate amounts."},
+{"d":"nutrition","q":"Which nutrients supply energy (calories)?","c":["Vitamins and minerals by themselves","Carbohydrate, protein, and fat","Water and dietary fiber","Electrolytes and trace minerals"],"a":1,"why":"Only the macronutrients, carbohydrate, protein, and fat, provide energy. Micronutrients do not."},
+{"d":"nutrition","q":"For general weight loss, the most durable approach a trainer can support is:","c":["A crash diet for fast results","A modest, sustainable deficit plus activity","Skipping meals most days","Eating one food group"],"a":1,"why":"A moderate, sustainable deficit paired with activity is more maintainable and effective long term than extreme approaches."},
+{"d":"assessment","q":"The primary purpose of preparticipation health screening is to:","c":["Sell more training packages","Find who needs medical clearance first","Set the client's goals","Estimate body fat"],"a":1,"why":"Screening flags conditions or risk factors that warrant physician clearance before starting a program."},
+{"d":"assessment","q":"Which assessment should generally be performed LAST in a session to avoid skewing results?","c":["Blood pressure","Flexibility","Cardio test","Body fat test"],"a":1,"why":"Flexibility testing goes last so accumulated fatigue from other tests does not distort the results."},
+{"d":"assessment","q":"BMI is best described as:","c":["A direct body-fat measurement","A weight-for-height screening ratio","A cardiovascular fitness score","A hydration measure"],"a":1,"why":"BMI compares weight to height as a screening tool and does not directly measure body fat."},
+{"d":"assessment","q":"VO2 max is expressed in which units?","c":["Beats/minute","mL/kg/min","mmHg","Kilograms"],"a":1,"why":"VO2 max is reported as milliliters of oxygen per kilogram of body weight per minute."},
+{"d":"assessment","q":"The Borg RPE scale traditionally ranges from:","c":["0 to 100","6 to 20","1 to 5","10 to 30"],"a":1,"why":"The classic Borg rating of perceived exertion scale runs from 6 to 20, roughly tracking heart rate in tens."},
+{"d":"assessment","q":"A submaximal test is used because it:","c":["It is far more accurate than a maximal test","Estimates a max with less risk and effort","It requires no equipment whatsoever","It only works for well-trained athletes"],"a":1,"why":"Submaximal tests estimate values like VO2 max while reducing the risk and strain of an all-out effort."},
+{"d":"assessment","q":"Waist-to-hip ratio is used to assess:","c":["Overall muscular strength level","Fat-distribution health risk","General joint flexibility","Aerobic (cardio) capacity"],"a":1,"why":"The ratio indicates how fat is distributed, which carries its own health risk profile."},
+{"d":"assessment","q":"During screening a new client reports chest pain during exertion. The appropriate action is to:","c":["Begin a light workout, watch them","Refer for physician clearance before exercise","Ignore it if they feel fine","Sign a waiver and proceed"],"a":1,"why":"Signs or symptoms such as exertional chest pain require medical clearance before starting exercise."},
+{"d":"assessment","q":"A one-rep max test measures:","c":["Muscular endurance capacity","Maximal muscular strength","General joint flexibility","Aerobic fitness level"],"a":1,"why":"The one-rep max is the most weight lifted once with good form, a measure of maximal strength."},
+{"d":"assessment","q":"Which is a valid field test for estimating cardiorespiratory fitness?","c":["Sit-and-reach","Rockport walk test","Skinfold caliper test","Handgrip dynamometer"],"a":1,"why":"The Rockport one-mile walk test estimates cardiorespiratory fitness. Sit-and-reach measures flexibility and skinfolds measure body fat."},
+{"d":"assessment","q":"Under current guidelines, a resting blood pressure reading is generally considered elevated starting around:","c":["Somewhere around 90 to 100 systolic","120-129 systolic, diastolic under 80","At or above 160 systolic pressure","Anything under 110 systolic pressure"],"a":1,"why":"Current categories flag 120 to 129 over under 80 as elevated. Some older materials use higher cutoffs, so confirm the set your exam uses."},
+{"d":"programming","q":"The SAID principle states that the body:","c":["Recovers fully within 24 hours","Adapts to the specific demands imposed","Loses fitness after months","Grows fastest from cardio"],"a":1,"why":"Specific Adaptation to Imposed Demands means adaptations mirror the exact type of training performed."},
+{"d":"programming","q":"For maximal strength, the most appropriate loading is roughly:","c":["40 to 50% 1RM for about 20 reps","85%+ 1RM, low reps, long rest","About 60% 1RM for 15 reps","Bodyweight-only movements"],"a":1,"why":"Maximal strength calls for heavy loads at about 85 percent of a one-rep max and above, low reps, and long rest of two to five minutes."},
+{"d":"programming","q":"Which rep and load range best targets muscular hypertrophy?","c":["1 to 3 reps at about 95% 1RM","6 to 12 reps at 67 to 85% 1RM","20+ reps at 40% 1RM","Single reps to failure"],"a":1,"why":"Hypertrophy is typically driven by moderate loads for 6 to 12 reps with moderate rest."},
+{"d":"programming","q":"The Karvonen formula for target heart rate is:","c":["HRmax multiplied by the intensity percentage","((HRmax minus HRrest) times intensity) plus HRrest","(HRmax minus HRrest) times intensity, nothing added","Simply 220 minus your current age"],"a":1,"why":"Karvonen uses heart-rate reserve: subtract resting from max, multiply by intensity, then add resting heart rate back."},
+{"d":"programming","q":"A microcycle most commonly refers to a training block of about:","c":["One year","One month","One week","One day"],"a":2,"why":"A microcycle is the shortest planning unit, usually about a week."},
+{"d":"programming","q":"Progressive overload means:","c":["Training to failure each session","Gradually increasing the training stimulus","Keeping weights the same for months","Adding more cardio only"],"a":1,"why":"Progressive overload is the systematic increase of demand so the body keeps adapting."},
+{"d":"programming","q":"Which describes undulating periodization?","c":["A steady rise over several months","Varying volume and intensity within a week","No planning at all","Changing exercises yearly"],"a":1,"why":"Undulating periodization varies the training stimulus frequently, often within a single week."},
+{"d":"programming","q":"In a well-ordered session, power or explosive work should generally be placed:","c":["At the very end when fatigued","Early, after the warm-up","During the cool-down","It does not matter"],"a":1,"why":"Power and technical work go early while the client is fresh, since fatigue degrades quality and safety."},
+{"d":"programming","q":"The 'T' pair in the FITT principle stands for:","c":["Tempo and Total","Time and Type","Tension and Torque","Target and Test"],"a":1,"why":"FITT is Frequency, Intensity, Time, and Type."},
+{"d":"programming","q":"General adaptation syndrome describes the sequence:","c":["Alarm, resistance, exhaustion","Warm-up, work, and cool-down","Load, deload, and reload again","Build, peak, and taper down"],"a":0,"why":"Selye's model runs alarm, resistance, and then exhaustion if recovery is inadequate."},
+{"d":"programming","q":"Reversibility in training means:","c":["Adaptations are essentially permanent","Fitness declines when training stops","Muscle simply turns into fat","Cardio undoes all strength gains"],"a":1,"why":"Reversibility, or detraining, is the loss of adaptations once the stimulus is removed."},
+{"d":"programming","q":"Rest intervals for muscular endurance training are typically:","c":["A full 3 to 5 minutes between sets","Short, around 30 seconds or less","No rest between the sets at all","Exactly two minutes each time"],"a":1,"why":"Muscular endurance uses lighter loads, higher reps, and short rest to build fatigue resistance."},
+{"d":"special","q":"Which stretching method is best suited to a pre-workout warm-up?","c":["Static","Dynamic","Ballistic","PNF"],"a":1,"why":"Dynamic stretching moves through ranges of motion to prepare muscles and joints for activity."},
+{"d":"special","q":"For a client with hypertension, which practice should be avoided?","c":["Steady, low-intensity aerobic conditioning","The Valsalva maneuver during heavy lifts","A proper post-workout cool-down","A light dynamic warm-up routine"],"a":1,"why":"The Valsalva maneuver spikes blood pressure, which is risky for hypertensive clients."},
+{"d":"special","q":"Which stretching technique is generally most effective for increasing range of motion?","c":["Ballistic","Static","PNF","Dynamic"],"a":2,"why":"PNF, using contract-relax cycles, tends to produce the greatest gains in flexibility."},
+{"d":"special","q":"When training a client with type 2 diabetes who uses insulin, a key concern is:","c":["Overheating and nothing more than that","Hypoglycemia during or after exercise","Consuming far too much protein","Doing a bit too much stretching"],"a":1,"why":"Exercise can lower blood glucose, so hypoglycemia is a real risk, especially with insulin. Keep fuel on hand and monitor."},
+{"d":"special","q":"For a pregnant client in the later stages, which is generally advised?","c":["Frequent supine exercises","Avoiding prolonged supine positions","Maximal-effort lifting","Hot-yoga sessions"],"a":1,"why":"Prolonged supine positions are usually avoided later in pregnancy, along with overheating and high fall-risk activity."},
+{"d":"special","q":"For a client with osteoporosis, which is the better choice?","c":["Heavy loaded spinal-flexion movements","Weight-bearing work with a neutral spine","No resistance training whatsoever, at all","Ballistic toe-touch stretching"],"a":1,"why":"Weight-bearing loading supports bone, while loaded spinal flexion raises fracture risk and should be avoided."},
+{"d":"special","q":"When programming for older adults, a sensible priority is:","c":["Max one-rep testing on day one","Balance, functional strength, slow progression","High-impact plyometrics now","Skipping the warm-up"],"a":1,"why":"Balance, functional strength, and gradual progression reduce fall risk and suit typical needs of older adults."},
+{"d":"special","q":"Ballistic stretching is best described as:","c":["A safe default choice for every client","Bouncing movements with higher injury risk","Basically the same thing as static stretching","Something used only during the cool-down"],"a":1,"why":"Ballistic stretching uses momentum and bouncing, which raises injury risk and is reserved for advanced, sport-specific use."},
+{"d":"special","q":"Resistance training for youth is:","c":["Far too dangerous to allow","Safe and effective with good coaching","Only for teens over 16","Certain to stunt growth"],"a":1,"why":"With good technique, supervision, and appropriate loads, resistance training is safe and beneficial for young people."},
+{"d":"special","q":"The unifying rule across special populations is that the trainer should:","c":["Directly treat the underlying condition","Modify exercise and refer medical issues","Avoid all clients who have any conditions","Adjust the client's medications as needed"],"a":1,"why":"Trainers modify programming and monitor responses; diagnosis and treatment belong to medical professionals."},
+{"d":"professional","q":"Which activity clearly falls OUTSIDE a CPT's scope of practice?","c":["Coaching a client's squat technique closely","Prescribing a client's medication dosage","Designing a full strength program","Teaching a dynamic warm-up"],"a":1,"why":"Prescribing or adjusting medication is a medical act well outside a personal trainer's scope."},
+{"d":"professional","q":"A client says they are 'thinking about maybe getting in shape someday but not yet.' Which stage of change is this?","c":["Action","Maintenance","Contemplation","Precontemplation"],"a":2,"why":"Weighing the idea without a concrete plan or near-term commitment reflects the contemplation stage."},
+{"d":"professional","q":"Negligence in a training context means:","c":["A client not reaching a goal","Failing the standard of care, causing harm","Charging too much money","Missing a session"],"a":1,"why":"Negligence is the failure to provide the expected standard of care, resulting in harm to the client."},
+{"d":"professional","q":"Which is a properly formed SMART goal?","c":["Get quite a lot stronger fairly soon","Lose a good amount of body weight","Run a 5K under 30 min within 12 weeks","Just be a much healthier person overall"],"a":2,"why":"It is specific, measurable, and time-bound, unlike the vague alternatives."},
+{"d":"professional","q":"Informed consent primarily ensures that a client:","c":["Pays before any training","Knows the risks before agreeing to participate","Signs up for a package","Is cleared for competition"],"a":1,"why":"Informed consent documents that the client was told the risks of participation and agreed to proceed."},
+{"d":"professional","q":"For a minor soft-tissue injury like a mild ankle sprain, the classic first-aid approach is:","c":["Immediate heat and vigorous deep massage","RICE: rest, ice, compression, elevation","Keep training right through the pain","Stretch it out aggressively"],"a":1,"why":"RICE, rest, ice, compression, and elevation, is the standard early response for minor soft-tissue injuries."},
+{"d":"professional","q":"Self-efficacy is best defined as:","c":["A client's overall household income level","Belief in one's ability to succeed at a task","The trainer's professional certification level","One particular category of fitness goal"],"a":1,"why":"Self-efficacy is confidence in one's ability to perform a behavior, and it strongly predicts adherence."},
+{"d":"professional","q":"An emergency action plan should:","c":["Be memorized by every client","Define staff roles and steps for emergencies","Exist only in large commercial gyms","Completely replace CPR certification training"],"a":1,"why":"An EAP spells out who does what and the sequence of actions when an emergency occurs."},
+{"d":"professional","q":"Why should a trainer carry professional liability insurance?","c":["It is legally the same thing as CPR","It covers claims arising from their services","It guarantees a steady stream of new clients","It is only required for gym owners"],"a":1,"why":"Liability insurance protects the trainer financially against claims related to the services they provide."},
+{"d":"professional","q":"A client in the 'action' stage is best supported by:","c":["Convincing them that exercise is worthwhile now","Reinforcing the behavior and solving barriers","Waiting until they feel truly ready","Ignoring the progress they have made"],"a":1,"why":"In the action stage the client is already doing the behavior, so support focuses on reinforcement and removing obstacles."},
+{"d":"professional","q":"Which is the strongest example of staying within scope while helping with nutrition?","c":["Prescribing a 1,600-calorie diabetic meal plan","Sharing general healthy-eating guidelines","Recommending prescription supplements","Diagnosing a vitamin deficiency"],"a":1,"why":"General guidance is within scope; individualized clinical plans, prescriptions, and diagnoses are not."},
+{"d":"professional","q":"During a session a client becomes pale, clutches their chest, and is short of breath. You should first:","c":["Offer water and keep training at a lighter pace","Stop and activate the emergency action plan","Have them stretch it out and continue","Wait a while to see if it passes"],"a":1,"why":"These are warning signs of a serious event. Stop immediately and activate emergency procedures, including calling for help."},
+{"d":"anatomy","q":"Which tissue connects muscle to bone?","c":["Tendon","Ligament","Cartilage","Bursa"],"a":0,"why":"Tendons attach muscle to bone. Ligaments, by contrast, connect bone to bone."},
+{"d":"anatomy","q":"The neurotransmitter released at the neuromuscular junction to trigger contraction is:","c":["Dopamine","Insulin","Acetylcholine","Cortisol"],"a":2,"why":"Acetylcholine is released at the neuromuscular junction and starts the events that lead to a muscle contraction."},
+{"d":"anatomy","q":"Which system rapidly regenerates ATP using creatine phosphate?","c":["Oxidative","Phosphagen","Glycolytic","Aerobic system"],"a":1,"why":"The phosphagen (ATP-PC) system uses stored creatine phosphate to resynthesize ATP almost instantly for short, powerful efforts."},
+{"d":"anatomy","q":"The basic contractile unit of a muscle is the:","c":["Sarcomere","Fascicle","Motor unit","Tendon"],"a":0,"why":"The sarcomere, the repeating actin-and-myosin unit, is where the sliding filament action produces force."},
+{"d":"anatomy","q":"Which heart chamber pumps oxygenated blood out to the body?","c":["Right atrium","Right ventricle","Left atrium","Left ventricle"],"a":3,"why":"The left ventricle is the strongest chamber, pushing oxygenated blood into the systemic circulation."},
+{"d":"anatomy","q":"Blood is returned toward the heart primarily through the:","c":["Arteries","Veins","Capillaries","Aorta"],"a":1,"why":"Veins carry blood back to the heart. Arteries carry it away."},
+{"d":"anatomy","q":"Slow-twitch fibers are best described as:","c":["Type IIx and glycolytic","Type I and oxidative","Type IIa and explosive","Nonfunctional in adults"],"a":1,"why":"Type I fibers are slow, aerobic (oxidative), and fatigue-resistant."},
+{"d":"anatomy","q":"Calcium's main job during a muscle contraction is to:","c":["Directly supply the ATP","Expose actin's binding sites","Detach the myosin cross-bridge","End the contraction quickly"],"a":1,"why":"Calcium shifts troponin and tropomyosin, exposing the binding sites on actin so myosin can attach."},
+{"d":"anatomy","q":"Testosterone and growth hormone are classified as:","c":["Catabolic hormones","Anabolic hormones","Digestive enzymes","Neurotransmitters"],"a":1,"why":"They are anabolic, promoting tissue building and repair. Cortisol, by contrast, is catabolic."},
+{"d":"anatomy","q":"At low exercise intensities, the oxidative system draws heavily on:","c":["Phosphocreatine","Fat as a major fuel","Anaerobic energy","Dietary protein"],"a":1,"why":"At lower intensities the body relies more on fat oxidation, shifting toward carbohydrate as intensity climbs."},
+{"d":"anatomy","q":"A ligament connects:","c":["Muscle to bone","Bone to bone","Muscle to muscle","Nerve to muscle"],"a":1,"why":"Ligaments join bone to bone to stabilize joints. Tendons connect muscle to bone."},
+{"d":"anatomy","q":"Type IIx fibers are best suited to:","c":["Long-duration endurance activity","Brief, maximal power efforts","Maintaining upright posture","Storing nutrients in the muscle"],"a":1,"why":"Type IIx fibers are the fastest and most powerful but fatigue quickly, so they shine in brief maximal efforts."},
+{"d":"biomech","q":"Plantar flexion and dorsiflexion at the ankle occur in which plane?","c":["Frontal","Transverse","Sagittal","Oblique"],"a":2,"why":"Pointing and flexing the foot are flexion and extension movements, which occur in the sagittal plane."},
+{"d":"biomech","q":"The fixed pivot point about which a lever rotates is called the:","c":["Effort","Fulcrum","Resistance","Moment"],"a":1,"why":"The fulcrum is the axis or pivot. At a joint, it is the joint itself."},
+{"d":"biomech","q":"Internal and external rotation of the shoulder occur in which plane?","c":["Sagittal plane","Frontal plane","Transverse","Coronal plane"],"a":2,"why":"Rotational movements happen in the transverse plane."},
+{"d":"biomech","q":"Lateral flexion of the spine (side bending) occurs in which plane?","c":["Sagittal","Frontal","Transverse","Longitudinal"],"a":1,"why":"Side bending moves the body in the frontal plane."},
+{"d":"biomech","q":"A dumbbell fly, sweeping the arms together in front of the chest, occurs mainly in the:","c":["The sagittal plane","Frontal plane","Transverse plane","Median plane"],"a":2,"why":"Horizontal adduction of the shoulders takes place in the transverse plane."},
+{"d":"biomech","q":"When the biceps flexes the elbow, the triceps acts as the:","c":["Agonist","Synergist","Antagonist","Stabilizer"],"a":2,"why":"The triceps opposes elbow flexion, so it is the antagonist during that action."},
+{"d":"biomech","q":"The elbow is best classified as which type of joint?","c":["Ball socket","Hinge","Pivot","Gliding"],"a":1,"why":"The elbow is a hinge joint, allowing flexion and extension in one plane."},
+{"d":"biomech","q":"Increasing the length of the resistance lever arm will:","c":["Decrease the torque required","Increase the torque required","Have no effect","Eliminate the need for effort"],"a":1,"why":"Torque equals force times lever-arm length, so a longer resistance arm makes the load harder to move."},
+{"d":"biomech","q":"Which plane divides the body into anterior and posterior (front and back) halves?","c":["Sagittal","Frontal","Transverse","Vertical"],"a":1,"why":"The frontal, or coronal, plane splits the body into front and back."},
+{"d":"biomech","q":"Which movement is flexion?","c":["Straightening the knee completely","Bending the elbow to raise the forearm","Lowering the arm back down from overhead","Spreading the fingers apart"],"a":1,"why":"Flexion decreases a joint angle, as when bending the elbow."},
+{"d":"biomech","q":"A seated shoulder press moves the arms overhead primarily in the:","c":["Transverse plane","Frontal plane","Sagittal plane","Horizontal plane"],"a":1,"why":"Raising the arms out and up alongside the body is largely shoulder abduction, a frontal-plane action."},
+{"d":"biomech","q":"In a third-class lever such as a biceps curl, the arrangement favors:","c":["Maximum force output","Speed and range of motion","Reduced stress on the joint","No movement at all"],"a":1,"why":"Third-class levers sacrifice mechanical advantage for greater speed and range of motion at the moving end."},
+{"d":"nutrition","q":"Which vitamin is fat-soluble?","c":["Vitamin C","Vitamin D","Vitamin B12","Folate"],"a":1,"why":"Vitamins A, D, E, and K are fat-soluble. Vitamin C and the B vitamins are water-soluble."},
+{"d":"nutrition","q":"Roughly how many kilocalories are stored in one pound of body fat?","c":["500","1,500","3,500","10,000"],"a":2,"why":"About 3,500 kcal are commonly attributed to a pound of fat, which is why a sustained deficit is needed to lose it."},
+{"d":"nutrition","q":"An essential amino acid is one that:","c":["The body makes on its own","Must be obtained from food","Provides no protein","Is only found in supplements"],"a":1,"why":"Essential amino acids cannot be synthesized by the body and must come from the diet."},
+{"d":"nutrition","q":"Which mineral is most directly involved in carrying oxygen in the blood?","c":["Calcium","Iron","Sodium","Zinc"],"a":1,"why":"Iron is a key component of hemoglobin, which transports oxygen. Deficiency can impair endurance."},
+{"d":"nutrition","q":"Water makes up approximately what share of adult body weight?","c":["About 20%","About 40%","About 60%","About 90%"],"a":2,"why":"Adult bodies are roughly 60% water, underscoring why hydration affects performance."},
+{"d":"nutrition","q":"The primary role of dietary fiber is to:","c":["Provide most of the daily calories","Support digestion and regularity","Build muscle tissue directly","Replace dietary protein entirely"],"a":1,"why":"Fiber aids digestion and satiety and supports gut health. It is a carbohydrate the body largely does not digest for energy."},
+{"d":"nutrition","q":"Which is an example of a simple carbohydrate?","c":["Rolled oats","Table sugar","Brown rice","Cooked lentils"],"a":1,"why":"Simple carbohydrates like table sugar are quickly digested. Oats, brown rice, and lentils are more complex."},
+{"d":"nutrition","q":"Saturated fats are typically:","c":["Liquid at room temperature","Solid at room temperature","Free of calories","The same as trans fats"],"a":1,"why":"Saturated fats tend to be solid at room temperature, such as butter, while many unsaturated fats are liquid."},
+{"d":"nutrition","q":"To support glycogen resynthesis after a hard endurance session, the best choice is:","c":["Dietary fat entirely on its own","Carbohydrate, often with some protein","Protein entirely on its own","No food intake at all for several hours"],"a":1,"why":"Carbohydrate refills glycogen, and adding some protein supports recovery."},
+{"d":"nutrition","q":"A client on an extreme very-low-calorie fad diet is most at risk of:","c":["Gaining muscle mass very rapidly","Losing lean mass and key nutrients","Improved overall athletic performance","Noticeably better daily hydration"],"a":1,"why":"Severe restriction risks muscle loss, nutrient deficiencies, and poor adherence. A moderate deficit is safer."},
+{"d":"nutrition","q":"For general exercise, the recommended first-line hydration beverage is:","c":["Water","Energy drinks","Soda","Fruit juice"],"a":0,"why":"Water is the default for most general activity. Sports drinks are mainly for prolonged, intense, or hot-weather sessions."},
+{"d":"nutrition","q":"Which macronutrient provides the most energy per gram?","c":["Carbs","Protein","Fat","Fiber"],"a":2,"why":"Fat delivers 9 kcal per gram, more than carbohydrate or protein at 4."},
+{"d":"assessment","q":"The push-up test primarily assesses:","c":["Cardio fitness","Muscular endurance","Flexibility","Body fat"],"a":1,"why":"The push-up test gauges upper-body muscular endurance."},
+{"d":"assessment","q":"The sit-and-reach test is used to assess flexibility of the:","c":["The shoulder joints","Low back and hamstrings","The neck and upper spine","The ankle joints"],"a":1,"why":"Sit-and-reach targets low-back and hamstring flexibility."},
+{"d":"assessment","q":"Systolic blood pressure represents the pressure during:","c":["Heart relaxation","Heart contraction","Deep sleep","Exhalation"],"a":1,"why":"Systolic is the top number, reflecting arterial pressure while the heart contracts. Diastolic reflects relaxation."},
+{"d":"assessment","q":"Skinfold calipers estimate body fat by measuring:","c":["Overall bone density","Subcutaneous fat","Muscle fiber length","Total blood volume"],"a":1,"why":"Calipers pinch subcutaneous fat at standard sites to estimate overall body fat."},
+{"d":"assessment","q":"A resting heart rate is best taken:","c":["Right after a hard working set","At rest, such as upon waking","During a maximal effort test","While talking on the phone"],"a":1,"why":"Resting heart rate should be measured when calm and rested, for example first thing in the morning."},
+{"d":"assessment","q":"Before any maximal fitness test, the trainer should:","c":["Skip screening to save time","Obtain informed consent","Guarantee a passing result","Withhold the test details"],"a":1,"why":"Informed consent, explaining the test and its risks, must be obtained before testing."},
+{"d":"assessment","q":"When screening reveals several cardiovascular risk factors, the appropriate step is to:","c":["Begin hard training now","Recommend medical clearance","Ignore how they feel","Only do flexibility work"],"a":1,"why":"Multiple risk factors warrant physician clearance before starting or intensifying exercise."},
+{"d":"assessment","q":"The Rockport test estimates cardiorespiratory fitness using which activity?","c":["Cycling sprints","A one-mile walk","Vertical jumps","A plank hold"],"a":1,"why":"The Rockport test uses a timed one-mile walk with heart rate to estimate VO2 max."},
+{"d":"assessment","q":"Circumference (girth) measurements are chiefly used to:","c":["To diagnose an underlying disease","Track body size and fat spread","Measure VO2 max directly","Assess overall flexibility"],"a":1,"why":"Girth measurements track changes in body size and where fat is distributed over time."},
+{"d":"assessment","q":"Overestimating a new client's fitness level most directly risks:","c":["Merely somewhat slower results","Injury from overly aggressive training","Slightly better adherence","A useful drop in resting blood pressure"],"a":1,"why":"Starting too hard for the client's true level raises injury and dropout risk. Assessment guards against that."},
+{"d":"assessment","q":"Which is measured first in a typical battery?","c":["Maximal treadmill test","Resting blood pressure","1RM bench press","Sit-and-reach"],"a":1,"why":"Resting measures come first, before any exertion that would elevate the numbers."},
+{"d":"assessment","q":"A higher amount of visceral (abdominal) fat is associated with:","c":["Lower health risk","Greater health risk","No change in risk","Improved flexibility"],"a":1,"why":"Visceral fat around the organs carries greater cardiometabolic risk, which is why waist measures matter."},
+{"d":"programming","q":"Applying specificity, a client training for a 10K should mostly:","c":["Do heavy maximal-effort single reps","Perform run-based aerobic training","Only stretch and nothing else","Avoid all forms of cardio"],"a":1,"why":"Specificity means training should resemble the goal, so distance running work best prepares a 10K."},
+{"d":"programming","q":"A planned deload week is used to:","c":["Set a brand-new max every single day","Allow recovery and reduce fatigue","Skip all training for an entire month","Take the place of the warm-up"],"a":1,"why":"Deloads reduce volume or intensity briefly so the body can recover and adapt, helping avoid overtraining."},
+{"d":"programming","q":"Rest intervals for maximal strength training are typically:","c":["10 to 20 seconds","30 to 60 seconds","2 to 5 minutes","No rest"],"a":2,"why":"Heavy strength work needs long rest, roughly 2 to 5 minutes, to restore the phosphagen system between sets."},
+{"d":"programming","q":"Which is a valid way to apply progressive overload?","c":["Keep everything identical","Increase load, reps, sets, or cut rest","Train only when motivated","Skip sessions randomly"],"a":1,"why":"Overload can be progressed by adjusting load, reps, sets, density, or rest, as long as demand rises over time."},
+{"d":"programming","q":"In a session, compound multi-joint lifts should generally be placed:","c":["After the isolation work","Before isolation work","At the very end of it","During the cool-down"],"a":1,"why":"Large compound lifts go early while the client is fresh, since they demand the most coordination and force."},
+{"d":"programming","q":"An appropriate starting resistance-training frequency for a beginner is often:","c":["Once per month","2 to 3 days per week","Twice per day","Only on weekends, heavy"],"a":1,"why":"Two to three full-body sessions per week lets beginners build skill and strength with adequate recovery."},
+{"d":"programming","q":"Which FITT variable describes how hard the exercise is?","c":["Frequency","Intensity","Time","Type"],"a":1,"why":"Intensity captures effort or load. Frequency is how often, time is duration, and type is the mode."},
+{"d":"programming","q":"Undulating (nonlinear) periodization differs from linear by:","c":["Never changing the load throughout the block","Varying volume and intensity within a week","Only ever using body weight","Removing all the rest days"],"a":1,"why":"Undulating models vary the stimulus session to session or within the week, rather than shifting gradually over months."},
+{"d":"programming","q":"Which rep and load scheme best develops muscular endurance?","c":["1 to 3 reps at a near-maximal load","15 or more reps at a lighter load","5 reps at about 90% 1RM","Single all-out maximal reps"],"a":1,"why":"Higher reps with lighter loads and short rest build the fatigue resistance that defines muscular endurance."},
+{"d":"programming","q":"The main purpose of periodization is to:","c":["Guarantee instant results","Manage fatigue and reduce plateaus","Avoid changing exercises","Eliminate warm-ups"],"a":1,"why":"Structured variation balances stress and recovery to keep progress coming and reduce burnout."},
+{"d":"programming","q":"A dynamic warm-up before training is meant to:","c":["Completely exhaust the client beforehand","Raise temperature and prep the joints","Take the place of the workout","Maximize static flexibility only"],"a":1,"why":"A dynamic warm-up increases temperature and blood flow and primes movement patterns for the session ahead."},
+{"d":"programming","q":"Training at roughly 60 to 70% of heart-rate reserve corresponds to:","c":["Very light activity","Moderate intensity","Maximal effort","Complete rest"],"a":1,"why":"That band reflects moderate aerobic intensity, useful for building a cardiovascular base."},
+{"d":"special","q":"For a client with exercise-induced asthma, sensible guidance includes:","c":["Skip the warm-up entirely","Warm up gradually, keep an inhaler handy","Do only maximal sprints","Avoid all exercise"],"a":1,"why":"A gradual warm-up and having their prescribed bronchodilator on hand help manage exercise-induced symptoms."},
+{"d":"special","q":"Performing prolonged static stretching immediately before a max power effort may:","c":["Noticeably increase peak power output","Temporarily reduce force and power","Have no possible effect at all","Guarantee an injury"],"a":1,"why":"Long static holds right before explosive work can briefly blunt force output, so dynamic warm-ups are preferred pre-training."},
+{"d":"special","q":"To reduce fall risk in older adults, a key training emphasis is:","c":["Balance and strength","Maximal one-rep testing","Plyometrics first","Static stretching only"],"a":1,"why":"Balance and functional strength work directly reduce fall risk and support independence."},
+{"d":"special","q":"A client with well-controlled type 1 diabetes should routinely:","c":["Avoid checking their blood glucose at all","Check glucose before and after exercise","Train only while in a fasted state","Cut out carbohydrates entirely"],"a":1,"why":"Monitoring glucose around exercise helps prevent hypoglycemia, a real risk with insulin use."},
+{"d":"special","q":"For an overweight client new to exercise, a joint-friendly starting point is:","c":["Jump into high-impact running","Low-impact work like walking or cycling","Maximal plyometrics","Heavy loaded jumping"],"a":1,"why":"Low-impact modes reduce joint stress while building a base, improving safety and adherence early on."},
+{"d":"special","q":"PNF stretching typically involves:","c":["Rapid bouncing at the end range","Contract-relax cycles with a partner or strap","Simply holding the breath throughout","Only brief passive holds lasting under a minute"],"a":1,"why":"PNF alternates muscle contraction and relaxation to improve range, frequently with assistance."},
+{"d":"special","q":"Which stretching method carries the highest injury risk for general clients?","c":["Static","Dynamic","Ballistic","PNF"],"a":2,"why":"Ballistic stretching uses bouncing momentum, raising injury risk, so it is reserved for advanced, sport-specific use."},
+{"d":"special","q":"Youth resistance training should emphasize:","c":["Heavy one-rep-max attempts each week","Technique, skill, and light loads","Full adult competition programs","Maximal single-rep lifts weekly"],"a":1,"why":"For young people the focus is good technique, skill development, and manageable loads under supervision."},
+{"d":"special","q":"For a client with non-acute low-back discomfort, programming should emphasize:","c":["Heavy loaded spinal flexion to failure","Core stability and pain-free movement","Ballistic toe-touch stretching","Maximal deadlifts on the first day"],"a":1,"why":"Core stability and controlled, pain-free ranges are safer starting points than aggressive spinal loading."},
+{"d":"special","q":"A hallmark of appropriate exercise for pregnant clients (with clearance) is:","c":["Maximal-effort heavy lifting","Avoiding overheating and fall risks","Frequent late-term supine work","Training all the way to full exhaustion"],"a":1,"why":"With clearance, activity generally continues while avoiding overheating, falls, and prolonged supine positions later on."},
+{"d":"special","q":"Dynamic stretching is most appropriate:","c":["As a cool-down","As part of the warm-up","Only on rest days","Never for athletes"],"a":1,"why":"Dynamic stretching prepares the body for activity, making it well suited to the warm-up."},
+{"d":"special","q":"The unifying principle when training any special population is to:","c":["Treat their medical condition","Screen, modify, and refer medical issues","Avoid modifications","Use one program for all"],"a":1,"why":"Trainers adapt exercise and monitor responses while referring diagnosis and treatment to medical professionals."},
+{"d":"professional","q":"A signed liability waiver primarily serves to:","c":["Eliminate all trainer liability","Show the client acknowledged the risks","Replace certification","Guarantee no injuries"],"a":1,"why":"A waiver records acknowledged risk, but it does not shield a trainer from liability for negligence."},
+{"d":"professional","q":"A client's private health information should be:","c":["Shared freely with other clients","Kept confidential and secure","Posted for accountability","Discussed publicly at the gym"],"a":1,"why":"Confidentiality is a professional and often legal obligation. Protect client health information."},
+{"d":"professional","q":"Which task is clearly within a trainer's scope?","c":["Diagnosing an athletic injury","Coaching proper exercise technique","Prescribing a client's medication","Providing physical therapy sessions"],"a":1,"why":"Coaching technique and designing exercise are core CPT functions. Diagnosis, prescriptions, and rehab are not."},
+{"d":"professional","q":"The precontemplation stage of change is marked by:","c":["Already exercising a lot","No intention to change soon","Keeping an old habit","Preparing a start date"],"a":1,"why":"In precontemplation the person is not yet considering change soon, so raising awareness is the useful approach."},
+{"d":"professional","q":"Extrinsic motivation is driven mainly by:","c":["Personal enjoyment of the activity","External rewards or pressures","Internal satisfaction alone","Simple personal curiosity"],"a":1,"why":"Extrinsic motivation comes from outside rewards like praise or prizes. Intrinsic motivation comes from within."},
+{"d":"professional","q":"A client repeatedly cancels sessions. A constructive first step is to:","c":["Drop them without discussion","Explore barriers and adjust the plan","Quietly add cancellation fees","Ignore the pattern"],"a":1,"why":"Understanding the obstacles and collaborating on a realistic plan supports adherence better than pressure."},
+{"d":"professional","q":"An AED is used to:","c":["Measure the client's resting blood pressure","Deliver a shock to restore heart rhythm","Stretch tight muscles safely","Track calories burned in a session"],"a":1,"why":"An automated external defibrillator can deliver a shock during certain cardiac arrests to restore rhythm."},
+{"d":"professional","q":"A client asks you to provide rehab exercises for a diagnosed rotator-cuff tear. You should:","c":["Design a rehab plan yourself","Refer them to a physical therapist","Heavily load the shoulder","Tell them to ignore it"],"a":1,"why":"Rehabilitation of a diagnosed injury is outside CPT scope. Refer to the appropriate medical professional."},
+{"d":"professional","q":"Which best reflects the 'measurable' part of a SMART goal?","c":["Get in shape","Feel a lot better","Do 10 push-ups by week 6","Just try harder"],"a":2,"why":"A measurable goal has a trackable metric and target, such as a specific number of push-ups by a date."},
+{"d":"professional","q":"Keeping session and progress documentation helps a trainer:","c":["Avoid ever having to change the program","Track progress and keep good records","Skip the reassessment step","Guarantee client results"],"a":1,"why":"Good records track progress, inform program adjustments, and support professional accountability."},
+{"d":"professional","q":"Building rapport with a new client is best achieved by:","c":["Talk mostly about yourself","Active listening and knowing their goals","Push your favorite program","Keep communication minimal"],"a":1,"why":"Listening and centering the client's goals builds trust, which supports adherence and results."},
+{"d":"professional","q":"Negligence generally requires that the trainer:","c":["Simply made some small mistake","Failed the standard of care, causing harm","Charged an unusually high hourly rate today","Ended a client's contract early"],"a":1,"why":"Negligence hinges on falling below the accepted standard of care and that failure causing harm."}
+];
+
+/* concept flashcards; the deck also folds in every glossary term */
+const CARDS = [
+{domain:"anatomy", front:"Name the three energy systems in order of the effort duration they fuel.", back:"Phosphagen (ATP-PC, ~10s), glycolytic (~10s to 2min), oxidative (longer, aerobic)."},
+{domain:"anatomy", front:"Which contraction type generates the most soreness, and why?", back:"Eccentric. Lengthening under load causes microscopic muscle damage."},
+{domain:"anatomy", front:"Write the cardiac output equation.", back:"Cardiac output = heart rate x stroke volume."},
+{domain:"anatomy", front:"What does ATP actually do in the cross-bridge cycle?", back:"It binds myosin so the head can release from actin and reset for the next pull."},
+{domain:"anatomy", front:"Slowest to fastest, order the fiber types.", back:"Type I (slow, endurance), Type IIa (fast, mixed), Type IIx (fastest, power)."},
+{domain:"anatomy", front:"Four muscle roles in a movement?", back:"Agonist (prime mover), antagonist (opposes), synergist (assists), stabilizer (fixes the joint)."},
+{domain:"biomech", front:"Which plane owns flexion and extension?", back:"The sagittal plane."},
+{domain:"biomech", front:"Which plane owns abduction and adduction?", back:"The frontal plane."},
+{domain:"biomech", front:"Which plane owns rotation?", back:"The transverse plane."},
+{domain:"biomech", front:"Lever classes: what sits in the middle for each?", back:"First = fulcrum, second = resistance, third = effort. Third class is most common."},
+{domain:"biomech", front:"Give the classic second-class lever example.", back:"A standing calf raise (resistance between fulcrum and effort)."},
+{domain:"biomech", front:"Steps to analyze any exercise?", back:"Name the joint, the action, the plane, then the prime mover."},
+{domain:"nutrition", front:"Calories per gram: carbohydrate, protein, fat, alcohol?", back:"4, 4, 9, and 7."},
+{domain:"nutrition", front:"What single factor governs weight change?", back:"Energy balance: calories in versus calories out."},
+{domain:"nutrition", front:"What are the components of TDEE?", back:"Basal metabolic rate + thermic effect of food + activity."},
+{domain:"nutrition", front:"Rough daily protein range for active adults?", back:"About 1.2 to 2.0 g/kg."},
+{domain:"nutrition", front:"Meal plan for a client's medical condition: your move?", back:"Refer to a registered dietitian. It is outside CPT scope."},
+{domain:"assessment", front:"Correct order of assessments?", back:"Resting measures, body composition, cardiorespiratory, muscular fitness, flexibility last."},
+{domain:"assessment", front:"Is BMI a body-fat measurement?", back:"No. It is a weight-for-height screening ratio."},
+{domain:"assessment", front:"Units for VO2 max?", back:"mL/kg/min."},
+{domain:"assessment", front:"Range of the Borg RPE scale?", back:"6 to 20 (a 0 to 10 scale also exists)."},
+{domain:"assessment", front:"Client reports exertional chest pain during screening. Action?", back:"Refer for physician clearance before any exercise."},
+{domain:"programming", front:"State the SAID principle.", back:"Specific Adaptation to Imposed Demands: you adapt to what you train."},
+{domain:"programming", front:"Loading for maximal strength?", back:"About 85%+ 1RM, low reps, 2 to 5 minutes rest."},
+{domain:"programming", front:"Loading for hypertrophy?", back:"Roughly 67 to 85% 1RM, 6 to 12 reps, moderate rest."},
+{domain:"programming", front:"Write the Karvonen formula.", back:"Target HR = ((HRmax - HRrest) x intensity) + HRrest."},
+{domain:"programming", front:"Order the cycles largest to smallest.", back:"Macrocycle, mesocycle, microcycle."},
+{domain:"programming", front:"What does FITT stand for?", back:"Frequency, Intensity, Time, Type."},
+{domain:"special", front:"Which stretch for the warm-up, which for the cool-down?", back:"Dynamic to warm up, static to cool down."},
+{domain:"special", front:"What should hypertensive clients avoid?", back:"The Valsalva maneuver and heavy breath-holding lifts."},
+{domain:"special", front:"Most effective stretching method for range of motion?", back:"PNF (contract-relax)."},
+{domain:"special", front:"Chief exercise risk for a client on insulin?", back:"Hypoglycemia. Keep fuel available and monitor."},
+{domain:"special", front:"Osteoporosis: what movement to avoid?", back:"Loaded spinal flexion. Favor weight-bearing with a neutral spine."},
+{domain:"professional", front:"List the stages of change.", back:"Precontemplation, contemplation, preparation, action, maintenance."},
+{domain:"professional", front:"Define negligence in one line.", back:"Failing to meet the standard of care and causing harm."},
+{domain:"professional", front:"What does RICE stand for?", back:"Rest, Ice, Compression, Elevation."},
+{domain:"professional", front:"What makes a goal SMART?", back:"Specific, Measurable, Attainable, Relevant, Time-bound."}
+];
+
+/* client scenarios: apply the concepts under pressure */
+const SCENARIOS = [
+{"title":"The eight-week powerlifter","domain":"programming","setup":"A new client, 42 and sedentary for a decade, wants to peak for a powerlifting meet in eight weeks. On day one they ask you to program near-maximal singles three times a week.","prompt":"What is the most appropriate first step?","c":["Program the near-maximal singles they asked for","Build a foundation and technique first, then add load gradually","Decline to train them at all","Send them to a 1RM test today"],"a":1,"why":"Progression and readiness come first. A decade sedentary means building a base and technique before heavy loading, regardless of the timeline they want. The meet goal informs the plan; it does not override safe progression."},
+{"title":"The pressure spike","domain":"special","setup":"A 58-year-old client with well-managed hypertension is doing a heavy leg press. You notice they hold their breath and strain hard through each rep.","prompt":"What is the priority coaching cue?","c":["Encourage the breath-hold for power","Cue them to exhale on effort, no Valsalva","Add weight to build tolerance","Switch to maximal isometric holds"],"a":1,"why":"Breath-holding under heavy load drives the Valsalva maneuver and a blood-pressure spike, which is a specific risk for hypertensive clients. Cue steady exhalation on the effort."},
+{"title":"The meal-plan request","domain":"nutrition","setup":"A client newly diagnosed with type 2 diabetes asks you to build a detailed daily meal plan with exact carbohydrate targets to manage their blood sugar.","prompt":"What should you do?","c":["Build the detailed plan with a macro calculator","Give general guidance and refer to a dietitian","Tell them to simply avoid all carbohydrates","Prescribe a specific low-carbohydrate protocol"],"a":1,"why":"Individualized clinical nutrition for a medical condition is outside CPT scope. Offer general guidance and refer to a registered dietitian who can prescribe medical nutrition therapy."},
+{"title":"The former promoter","domain":"assessment","setup":"A 62-year-old client, a retired regional wrestling promoter from Duncan, Oklahoma, arrives for a first session eager to 'train like the old days.' During screening he mentions occasional dizziness when he stands up quickly and gets winded on stairs.","prompt":"Before programming anything, you should:","c":["Start a vigorous circuit to see how he handles it","Finish screening and refer for medical clearance","Skip the screening since he seems energetic","Have him sign a waiver and begin heavy lifting"],"a":1,"why":"Reported signs and symptoms such as dizziness and unusual breathlessness warrant physician clearance before exercise. Enthusiasm does not replace screening, no matter how good the stories are."},
+{"title":"The plateau","domain":"programming","setup":"A client has run the exact same routine, same weights and reps, for four months. Progress stalled weeks ago and motivation is fading.","prompt":"Which principle most directly explains the stall, and the fix?","c":["Reversibility; simply add more rest weeks","Progressive overload; add stimulus over time","Specificity; switch to a totally unrelated sport","Individuality; the client simply cannot improve"],"a":1,"why":"Without progressive overload the body has no reason to keep adapting. Increase load, reps, volume, or density over time to restart progress."},
+{"title":"The eager beginner","domain":"professional","setup":"A client says, 'I keep meaning to start exercising and I know I should, but I just have not committed to actually doing it yet.'","prompt":"Which stage of change is this, and the best approach?","c":["Action; reinforce their current exercise habit","Contemplation; help tip them toward starting","Maintenance; work to prevent relapse","Precontemplation; convince them exercise matters"],"a":1,"why":"Aware and considering but not yet committed is contemplation. Support means resolving ambivalence and building confidence to move toward preparation and action."},
+{"title":"The mid-session emergency","domain":"professional","setup":"Ten minutes into a session, a client suddenly becomes pale, presses a hand to their chest, and says they feel short of breath and lightheaded.","prompt":"Your first action is to:","c":["Offer water and go lighter","Stop at once and activate the emergency plan","Have them walk it off","Wait to see if it resolves"],"a":1,"why":"These are warning signs of a potential cardiac event. Stop at once, activate the EAP, and summon emergency help. Do not attempt to train through it."},
+{"title":"The knee on the way down","domain":"biomech","setup":"A client asks why their quads are 'working' during the lowering phase of a squat when they feel like they are just going down.","prompt":"The accurate explanation is:","c":["The quads are basically resting on the way down","The quads work eccentrically on the descent","Only the hamstrings do any work on the descent","Gravity does the work and the muscles do nothing"],"a":1,"why":"On the descent the knees flex while the quadriceps lengthen under load to control the movement, an eccentric contraction. The same prime mover then works concentrically to stand back up."},
+{"title":"The osteoporosis client","domain":"special","setup":"A client with diagnosed osteoporosis wants a core routine and has been doing loaded weighted sit-ups and heavy Russian twists.","prompt":"The safest adjustment is to:","c":["Add even more weight for a stronger core","Swap spinal flexion for neutral-spine loading","Stop all of their training entirely","Have them only do ballistic stretching instead"],"a":1,"why":"Loaded spinal flexion and rotation raise fracture risk in osteoporosis. Favor neutral-spine core work and weight-bearing loading that supports bone."},
+{"title":"The overtrainer","domain":"programming","setup":"A client trains hard seven days a week, sleeps poorly, feels constantly run down, and their lifts are going backward despite more effort.","prompt":"Through the lens of general adaptation syndrome, the issue is:","c":["Not enough volume; add sessions","Inadequate recovery, nearing exhaustion","A nutritional deficiency","Simply bad genetics"],"a":1,"why":"GAS says the body adapts during recovery. Relentless stress with no recovery drives the exhaustion stage, where performance declines. Program rest and deloads."},
+{"title":"The protein maximalist","domain":"nutrition","setup":"A client is eating well over 400 grams of protein a day, convinced that more protein always means more muscle, and asks you to confirm the strategy and push it even higher.","prompt":"The best response is to:","c":["Agree that eating more protein always builds more muscle","Tell them to double it again for faster gains","Explain intake needs plateau; refer for a detailed plan","Insist they stop all protein immediately"],"a":2,"why":"Protein needs level off around 1.2 to 2.0 g/kg for active people. Far beyond that does not add muscle and can crowd out other nutrients. Detailed individualized plans belong to a dietitian."},
+{"title":"The plane mix-up","domain":"biomech","setup":"A client watches you cue a barbell biceps curl and asks, out of curiosity, which plane of motion the movement actually happens in.","prompt":"The correct answer is:","c":["The sagittal plane","The frontal plane","No real plane","A diagonal plane"],"a":0,"why":"A curl is elbow flexion, which occurs in the sagittal plane."},
+{"title":"The treadmill loyalist","domain":"programming","setup":"A client wants to do treadmill work only, no resistance training, with a goal of losing fat and getting more toned. They are adamant that weights are unnecessary.","prompt":"The best guidance is to:","c":["Promise the treadmill alone will tone them up","Warn them resistance training will make them bulky","Have them just run daily until it is gone","Add resistance training and manage energy balance"],"a":3,"why":"Resistance training preserves lean mass and drives the toned look, while fat loss follows overall energy balance. Cardio alone is a narrower tool, and lifting does not automatically make people bulky."},
+{"title":"The stretch-first sprinter","domain":"special","setup":"A sprint client does several minutes of long, held static stretches right before top-speed work, then complains that they feel flat and slow out of the blocks.","prompt":"The best adjustment is to:","c":["Keep doing the long static holds before sprinting","Do a dynamic warm-up; static stretching after","Tell them to skip warming up completely","Have them hold each stretch even longer"],"a":1,"why":"Prolonged static stretching immediately before explosive work can briefly reduce force and power. Use a dynamic warm-up beforehand and save static stretching for the cool-down."},
+{"title":"The gym-lore expert","domain":"programming","setup":"A confident client explains that lifting shoes are pointless, soreness is the only real sign of a good workout, carbs after 7 pm turn straight into fat, and his pre-workout is basically a multivitamin. He wants his whole program built around these truths.","prompt":"The most professional response is to:","c":["Build the entire plan around his rules to keep him happy","Agree that soreness is the only measure that counts","Kindly correct the myths and program on sound principles","Mock his ideas until he abandons every last one"],"a":2,"why":"Soreness is not a reliable measure of a good session, meal timing matters far less than total daily intake, and a stimulant pre-workout is not a multivitamin. Correct the myths respectfully, keep the rapport, and build on evidence rather than gym lore."},
+{"title":"The waiver believer","domain":"professional","setup":"A client insists that because they signed your liability waiver, you cannot be held responsible for anything, so there is no need to bother with the health-history questionnaire.","prompt":"You should:","c":["Note a waiver won't cover negligence; still screen","Agree, and skip the entire health-history screening","Promise nothing can ever go wrong now","Tear up the waiver as unnecessary"],"a":0,"why":"A waiver documents assumed risk but does not shield a trainer from liability for negligence. Screening and documentation still matter."},
+{"title":"The skipped breakfast","domain":"special","setup":"A client with type 2 diabetes who uses insulin arrives for a morning session having taken their usual insulin but skipped breakfast, and mentions they feel shaky and a little dizzy.","prompt":"Your first move is to:","c":["Start hard to burn glucose faster","Ignore it and proceed as normal","Send them home with no advice","Check glucose; give fast carbs first"],"a":3,"why":"Shakiness with insulin on board and no food points to possible hypoglycemia. Have them check blood glucose and take fast-acting carbohydrate before any exercise, and keep monitoring."},
+{"title":"The day-one max","domain":"assessment","setup":"A brand-new, largely deconditioned client wants to test a true one-rep-max back squat on the very first day, just to see where they are at.","prompt":"The appropriate response is to:","c":["Load up the bar and test a true 1RM right now","Assess movement first; use submaximal tests","Skip all assessment and start heavy","Tell them 1RM testing is never useful"],"a":1,"why":"Maximal testing on an unassessed, deconditioned beginner is risky. Screen movement quality and use submaximal methods to estimate strength first."},
+{"title":"The muscle mix-up","domain":"anatomy","setup":"A client asks you which muscle group is the prime mover responsible for extending the knee, like at the top of a leg extension.","prompt":"The correct answer is:","c":["The hamstrings","The gastrocnemius","The quadriceps","Gluteus maximus"],"a":2,"why":"The quadriceps extend the knee. The hamstrings flex it."},
+{"title":"The crash-and-quit cycle","domain":"professional","setup":"A client swings between severe crash diets and giving up entirely, and now wants you to write an exact 1,200-calorie plan to fix things fast.","prompt":"The best response within your scope is to:","c":["Encourage sustainable habits; refer to a dietitian","Write out the exact 1,200-calorie plan they asked for","Tell them crash dieting is the fastest fix","Put them on your own strict cutting plan"],"a":0,"why":"Prescribing a specific calorie plan is outside CPT scope, and the crash-and-quit cycle needs a sustainable approach. Encourage moderate, consistent habits and refer to a registered dietitian for individualized targets."}
+];
+
+/* crossword answers (letters only) with clues; the generator lays out intersections */
+const CROSSWORD_WORDS = [
+{answer:"SAGITTAL", clue:"Plane of flexion and extension"},
+{answer:"AGONIST", clue:"The prime mover in an action"},
+{answer:"ANTAGONIST", clue:"Muscle that opposes the prime mover"},
+{answer:"ECCENTRIC", clue:"Lengthening contraction; the lowering phase"},
+{answer:"OVERLOAD", clue:"Challenging the body beyond its habit to force adaptation"},
+{answer:"INSULIN", clue:"Hormone that moves glucose into cells"},
+{answer:"PROTEIN", clue:"Macronutrient at 4 kcal per gram, supplies amino acids"},
+{answer:"TENDON", clue:"Connective tissue attaching muscle to bone"},
+{answer:"LACTATE", clue:"Byproduct of the glycolytic energy system"},
+{answer:"CORTISOL", clue:"Catabolic stress hormone"},
+{answer:"GLYCOGEN", clue:"Stored form of carbohydrate in muscle and liver"},
+{answer:"ISOMETRIC", clue:"Contraction with tension but no length change"},
+{answer:"FRONTAL", clue:"Plane of abduction and adduction"},
+{answer:"EXTENSION", clue:"Increasing the angle at a joint"},
+{answer:"ADDUCTION", clue:"Moving a limb toward the midline"},
+{answer:"NEGLIGENCE", clue:"Failing the standard of care and causing harm"},
+{answer:"VALSALVA", clue:"Breath-hold maneuver that spikes blood pressure"},
+{answer:"TORQUE", clue:"Rotational force, rises with lever-arm length"},
+{answer:"KARVONEN", clue:"Method using heart-rate reserve for target HR"},
+{answer:"SYNERGIST", clue:"Muscle that assists the prime mover"},
+{answer:"OXIDATIVE", clue:"Aerobic energy system for longer efforts"},
+{answer:"SPECIFICITY", clue:"Principle behind SAID"},
+{answer:"CONCENTRIC", clue:"Shortening contraction; the lifting phase"},
+{answer:"FLEXION", clue:"Decreasing the angle at a joint"},
+{answer:"ABDUCTION", clue:"Moving a limb away from the midline"},
+{answer:"TRANSVERSE", clue:"Plane of rotation"},
+{answer:"FULCRUM", clue:"The pivot point of a lever"},
+{answer:"LIGAMENT", clue:"Connective tissue joining bone to bone"},
+{answer:"CARTILAGE", clue:"Tissue that cushions a joint"},
+{answer:"SARCOMERE", clue:"The contractile unit of muscle"},
+{answer:"HYPERTROPHY", clue:"An increase in muscle size"},
+{answer:"ENDURANCE", clue:"The capacity to resist fatigue"},
+{answer:"HYDRATION", clue:"Maintaining adequate body fluid"},
+{answer:"SYSTOLIC", clue:"Blood pressure during heart contraction"},
+{answer:"AEROBIC", clue:"Energy production that uses oxygen"},
+{answer:"ANAEROBIC", clue:"Energy production without oxygen"},
+{answer:"DYNAMIC", clue:"Stretching style suited to the warm-up"},
+{answer:"STATIC", clue:"Stretching style suited to the cool-down"},
+{answer:"DELTOID", clue:"Prime mover in shoulder abduction (middle head)"},
+{answer:"QUADRICEPS", clue:"Prime mover in knee extension"},
+{answer:"CONSENT", clue:"A client's informed agreement to participate"},
+{answer:"CALORIE", clue:"A unit of food energy"}
+];
+
+/* prime-mover pairs for the matcher */
+const MOVERS = [
+{action:"Hip extension", muscle:"Gluteus maximus"},
+{action:"Knee extension", muscle:"Quadriceps"},
+{action:"Knee flexion", muscle:"Hamstrings"},
+{action:"Elbow flexion", muscle:"Biceps brachii"},
+{action:"Elbow extension", muscle:"Triceps brachii"},
+{action:"Shoulder abduction", muscle:"Middle deltoid"},
+{action:"Plantarflexion", muscle:"Gastrocnemius"},
+{action:"Dorsiflexion", muscle:"Tibialis anterior"},
+{action:"Hip flexion", muscle:"Iliopsoas"},
+{action:"Trunk flexion", muscle:"Rectus abdominis"},
+{action:"Spinal extension", muscle:"Erector spinae"},
+{action:"Horizontal shoulder adduction", muscle:"Pectoralis major"},
+{action:"Scapular retraction", muscle:"Rhomboids"},
+{action:"Shoulder extension (pulldown)", muscle:"Latissimus dorsi"},
+{action:"Hip abduction", muscle:"Gluteus medius"},
+{action:"Shoulder flexion", muscle:"Anterior deltoid"}
+];
+
+/* ============================================================
+   APP LOGIC
+   ============================================================ */
+const DOM = Object.fromEntries(DOMAINS.map(d=>[d.id,d]));
+
+const ICONS = {
+ sparkle:`<svg viewBox="0 0 24 24" fill="currentColor" style="width:100%;height:100%;display:block"><path d="M12 0C13.5 8.5 15.5 10.5 24 12C15.5 13.5 13.5 15.5 12 24C10.5 15.5 8.5 13.5 0 12C8.5 10.5 10.5 8.5 12 0Z"/></svg>`,
+ splat:`<svg viewBox="0 0 24 24" fill="currentColor" style="width:100%;height:100%;display:block"><path d="M12 0l2.4 4.3 4.7-1.6-1.2 4.8 4.8 1.1-3.5 3.4 3.5 3.4-4.8 1.1 1.2 4.8-4.7-1.6L12 24l-2.4-4.3-4.7 1.6 1.2-4.8L1.3 15.4l3.5-3.4L1.3 8.6l4.8-1.1L4.9 2.7l4.7 1.6L12 0z"/></svg>`,
+ globe:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="width:100%;height:100%;display:block"><circle cx="12" cy="12" r="10"/><ellipse cx="12" cy="12" rx="4.3" ry="10"/><path d="M2 12h20M4 6.5h16M4 17.5h16"/></svg>`,
+ cursor:`<svg viewBox="0 0 24 24" fill="currentColor" style="width:100%;height:100%;display:block"><path d="M5 3l14.5 7.2-6.3 1.5-2 6.6L5 3z"/></svg>`,
+ home:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:100%;height:100%;display:block"><path d="M4 11l8-7 8 7M6 10v10h12V10"/></svg>`,
+ book:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:100%;height:100%;display:block"><path d="M4 4h11a3 3 0 0 1 3 3v13H7a3 3 0 0 0-3 3V4Z"/><path d="M18 7h2v16H7"/></svg>`,
+ list:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:100%;height:100%;display:block"><path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg>`,
+ cards:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:100%;height:100%;display:block"><rect x="3" y="6" width="13" height="14" rx="1"/><path d="M8 3h9a2 2 0 0 1 2 2v11"/></svg>`,
+ brain:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:100%;height:100%;display:block"><circle cx="12" cy="12" r="9"/><path d="M12 3v18M3.5 9h5M15.5 9h5M3.5 15h5M15.5 15h5"/></svg>`,
+ quiz:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:100%;height:100%;display:block"><rect x="4" y="3" width="16" height="18" rx="1"/><path d="M8 8.5l2 2 4-4M8 15h8"/></svg>`,
+ timer:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:100%;height:100%;display:block"><circle cx="12" cy="13" r="8"/><path d="M12 13V9M9.5 2h5"/></svg>`,
+ guide:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:100%;height:100%;display:block"><rect x="5" y="3" width="14" height="18" rx="1"/><path d="M9 8h6M9 12h6M9 16h4"/></svg>`,
+ match:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:100%;height:100%;display:block"><circle cx="6" cy="7" r="3"/><circle cx="18" cy="17" r="3"/><path d="M9 7h6a3 3 0 0 1 3 3v4M6 10v4a3 3 0 0 0 3 3h6"/></svg>`,
+ grid:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:100%;height:100%;display:block"><rect x="3" y="3" width="18" height="18"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/></svg>`,
+ info:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:100%;height:100%;display:block"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>`
+};
+
+const VIEWS=[
+ {id:"home", label:"Dashboard", tag:"HOME", icon:"home"},
+ {id:"summaries", label:"Summaries", tag:"READ", icon:"book"},
+ {id:"terms", label:"Key Terms", tag:"LEX", icon:"list"},
+ {id:"flashcards", label:"Flashcards", tag:"DECK", icon:"cards"},
+ {id:"srs", label:"Daily Review", tag:"SRS", icon:"brain"},
+ {id:"quiz", label:"Quizzes", tag:"QUIZ", icon:"quiz"},
+ {id:"exam", label:"Exam Simulator", tag:"SIM", icon:"timer"},
+ {id:"guides", label:"Study Guides", tag:"GUIDE", icon:"guide"},
+ {id:"movers", label:"Prime Movers", tag:"ANAT", icon:"match"},
+ {id:"scenarios", label:"Scenarios", tag:"CASE", icon:"globe"},
+ {id:"crossword", label:"Crossword", tag:"XWORD", icon:"grid"},
+ {id:"about", label:"Read Me", tag:"INFO", icon:"info"}
+];
+
+/* ---- helpers ---- */
+const $ = (s,r=document)=>r.querySelector(s);
+const $$ = (s,r=document)=>Array.from(r.querySelectorAll(s));
+const stage = $("#stage");
+const letter = i=>String.fromCharCode(65+i);
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function prepQ(q){const order=shuffle(q.c.map((_,i)=>i));return {...q,c:order.map(i=>q.c[i]),a:order.indexOf(q.a)};}
+
+const store = {
+  ok:(()=>{try{localStorage.setItem('spotter:_t','1');localStorage.removeItem('spotter:_t');return true;}catch(e){return false;}})(),
+  get(k,d){try{const v=localStorage.getItem('spotter:'+k);return v==null?d:JSON.parse(v);}catch(e){return d;}},
+  set(k,v){try{localStorage.setItem('spotter:'+k,JSON.stringify(v));return true;}catch(e){return false;}}
+};
+
+let toastTimer;
+function toast(msg){const t=$("#toast");t.textContent=msg;t.classList.add('on');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('on'),2800);}
+
+function setView(html){stage.innerHTML=`<div class="view">${html}</div>`;}
+function head(eyebrow,title,lede){return `<div class="head"><div class="eyebrow">${eyebrow}</div><h1>${title}</h1>${lede?`<p class="lede">${lede}</p>`:''}</div>`;}
+function win(title,body,opt={}){const{cls='',icon='splat'}=opt;return `<section class="window ${cls}"><div class="win-bar"><span class="dots"><span></span><span></span><span></span></span><span class="win-title">${title}</span><span class="win-ico">${ICONS[icon]||''}</span></div><div class="win-body">${body}</div></section>`;}
+
+/* ---- shared deck ---- */
+function deckAll(dom){
+  let d=[
+    ...TERMS.map(t=>({key:t.term,front:t.term,back:t.def,domain:t.domain,kind:'Term'})),
+    ...CARDS.map(c=>({key:c.front,front:c.front,back:c.back,domain:c.domain,kind:'Concept'}))
+  ];
+  if(dom&&dom!=='all') d=d.filter(x=>x.domain===dom);
+  return d;
+}
+
+/* ============================================================
+   ROUTER
+   ============================================================ */
+let cleanup=null;
+let currentView=null;
+const RENDER={home:renderHome,summaries:renderSummaries,terms:renderTerms,flashcards:renderFlashcards,srs:renderSRS,quiz:renderQuiz,exam:renderExam,guides:renderGuides,movers:renderMovers,scenarios:renderScenarios,crossword:renderCrossword,about:renderAbout};
+
+function showView(id,push=true){
+  if(!RENDER[id]) id='home';
+  if(cleanup){try{cleanup();}catch(e){}cleanup=null;}
+  $$('.navlink').forEach(b=>{if(b.dataset.view===id)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');});
+  document.body.classList.remove('nav-open');
+  const bg=$("#burger"); if(bg) bg.setAttribute('aria-expanded','false');
+  RENDER[id]();
+  currentView=id;
+  try{stage.focus({preventScroll:true});}catch(e){}
+  window.scrollTo(0,0);
+  if(push && location.hash!=='#'+id) location.hash=id;
+}
+
+/* ============================================================
+   VIEW: DASHBOARD
+   ============================================================ */
+function renderHome(){
+  const deckN=TERMS.length+CARDS.length;
+  const due=srsDueCount();
+  const hero=win('spotter.exe',
+    `<div class="eyebrow" style="color:var(--ink)">unofficial // ncsf-cpt prep</div>
+     <h1 class="display" style="margin:12px 0 14px">Your spotter<br>for the exam</h1>
+     <p class="lede" style="color:var(--ink);max-width:52ch">Everything for the NCSF Certified Personal Trainer exam in one file. Read it, drill it, simulate it, repeat. No account, no upload, nothing leaves this page.</p>
+     <div class="stats">
+       <div class="stat"><div class="n">150</div><div class="l">Questions on exam</div></div>
+       <div class="stat"><div class="n">180</div><div class="l">Minutes</div></div>
+       <div class="stat"><div class="n">70</div><div class="l">Score to pass</div></div>
+       <div class="stat"><div class="n">NCCA</div><div class="l">Accredited</div></div>
+     </div>`,{cls:'loud',icon:'sparkle'});
+
+  const callout = due>0
+    ? win('review queue',
+        `<div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;justify-content:space-between">
+           <div><div class="display" style="font-size:clamp(2rem,7vw,3rem)">${due}</div><div class="eyebrow" style="color:var(--grape)">cards due for review</div></div>
+           <button class="btn solid" data-go="srs">Start today's review</button>
+         </div>`,{cls:'grape',icon:'brain'})
+    : '';
+
+  const tiles=[
+    {id:'summaries',t:'Summaries',d:'Plain-language rundowns of every domain.',b:DOMAINS.length+' domains',icon:'book'},
+    {id:'flashcards',t:'Flashcards',d:'Flip through terms and key concepts.',b:deckN+' cards',icon:'cards'},
+    {id:'srs',t:'Daily Review',d:'Spaced repetition that schedules itself.',b:store.ok?'self-scheduling':'session only',icon:'brain'},
+    {id:'quiz',t:'Quizzes',d:'Drill by domain with instant feedback.',b:QUESTIONS.length+' questions',icon:'quiz'},
+    {id:'exam',t:'Exam Simulator',d:'Timed mock exam, scored to 70.',b:'timed',icon:'timer'},
+    {id:'guides',t:'Study Guides',d:'Checklists, high-yield, mnemonics. Printable.',b:'printable',icon:'guide'},
+    {id:'movers',t:'Prime Movers',d:'Match the joint action to its muscle.',b:MOVERS.length+' pairs',icon:'match'},
+    {id:'scenarios',t:'Scenarios',d:'Apply the concepts to real clients.',b:SCENARIOS.length+' cases',icon:'globe'},
+    {id:'terms',t:'Key Terms',d:'A searchable glossary.',b:TERMS.length+' terms',icon:'list'},
+    {id:'crossword',t:'Crossword',d:'The vocabulary, gamified.',b:'puzzle',icon:'grid'}
+  ];
+  const grid=win('study tools',
+    `<div class="grid">${tiles.map(x=>`
+      <button class="tile" data-go="${x.id}">
+        <span class="ti">${ICONS[x.icon]}</span>
+        <span class="tt">${x.t}</span>
+        <span class="td">${x.d}</span>
+        <span class="badge">${x.b}</span>
+      </button>`).join('')}</div>`,{icon:'cursor'});
+
+  setView(hero+callout+grid);
+  $$('[data-go]').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.go)));
+}
+
+/* ============================================================
+   VIEW: SUMMARIES
+   ============================================================ */
+let sumDom=DOMAINS[0].id;
+function renderSummaries(){
+  const pills=DOMAINS.map(d=>`<button class="pill" data-dom="${d.id}" aria-pressed="${d.id===sumDom}">${d.short}</button>`).join('');
+  const d=DOM[sumDom];
+  const body=win(d.code+' // '+d.name.toLowerCase(),`<div class="prose">${d.summary}</div>`,{icon:d.icon});
+  setView(head('the rundown','Summaries','Moderate-depth walkthroughs of each exam domain. Pick one and read.')+`<div class="pills">${pills}</div>`+body);
+  $$('.pill').forEach(p=>p.addEventListener('click',()=>{sumDom=p.dataset.dom;renderSummaries();}));
+}
+
+/* ============================================================
+   VIEW: TERMS
+   ============================================================ */
+let termQuery='',termDom='all';
+function renderTerms(){
+  const pills=`<button class="pill" data-dom="all" aria-pressed="${termDom==='all'}">All</button>`+
+    DOMAINS.map(d=>`<button class="pill" data-dom="${d.id}" aria-pressed="${d.id===termDom}">${d.short}</button>`).join('');
+  setView(head('the lexicon','Key Terms',TERMS.length+' definitions worth knowing cold. Search or filter by domain.')+
+    `<div class="pills">${pills}</div>
+     <div style="margin-bottom:18px"><input class="search" id="termSearch" type="search" placeholder="Search terms and definitions..." value="${termQuery.replace(/"/g,'&quot;')}" autocomplete="off"></div>
+     ${win('glossary','<div id="termList"></div>',{icon:'list'})}`);
+  const input=$("#termSearch");
+  input.addEventListener('input',()=>{termQuery=input.value;paintTerms();});
+  $$('.pill').forEach(p=>p.addEventListener('click',()=>{termDom=p.dataset.dom;renderTerms();}));
+  paintTerms();
+  input.focus();
+}
+function paintTerms(){
+  const q=termQuery.trim().toLowerCase();
+  const rows=TERMS.filter(t=>(termDom==='all'||t.domain===termDom)&&(!q||t.term.toLowerCase().includes(q)||t.def.toLowerCase().includes(q)))
+    .sort((a,b)=>a.term.localeCompare(b.term));
+  const list=$("#termList"); if(!list) return;
+  if(!rows.length){list.innerHTML=`<div class="empty"><div class="ei">${ICONS.list}</div><h3>No matches</h3><p>Nothing fits that search. Try a shorter word, or clear the filter.</p></div>`;return;}
+  list.innerHTML=rows.map(t=>`<div class="term"><div class="t">${t.term}<span class="badge">${DOM[t.domain].short}</span></div><div class="d">${t.def}</div></div>`).join('');
+}
+
+/* ============================================================
+   VIEW: FLASHCARDS
+   ============================================================ */
+let fc={dom:'all',deck:[],i:0,flip:false};
+function renderFlashcards(){
+  if(!fc.deck.length||fc._dom!==fc.dom){fc.deck=shuffle(deckAll(fc.dom));fc.i=0;fc.flip=false;fc._dom=fc.dom;}
+  const pills=`<button class="pill" data-dom="all" aria-pressed="${fc.dom==='all'}">All</button>`+
+    DOMAINS.map(d=>`<button class="pill" data-dom="${d.id}" aria-pressed="${d.id===fc.dom}">${d.short}</button>`).join('');
+  setView(head('the deck','Flashcards','Tap the card to flip. Space flips, arrow keys move.')+
+    `<div class="pills">${pills}</div>
+     ${win('card','<div id="fcMount"></div>',{icon:'cards'})}
+     <div class="btn-row" style="justify-content:center;margin-top:6px">
+       <button class="btn" id="fcPrev">Prev</button>
+       <button class="btn solid" id="fcFlip">Flip</button>
+       <button class="btn" id="fcNext">Next</button>
+       <button class="btn ghost sm" id="fcShuffle">Shuffle deck</button>
+     </div>`);
+  paintCard();
+  $$('.pill').forEach(p=>p.addEventListener('click',()=>{fc.dom=p.dataset.dom;renderFlashcards();}));
+  $("#fcPrev").addEventListener('click',()=>{fc.i=(fc.i-1+fc.deck.length)%fc.deck.length;fc.flip=false;paintCard();});
+  $("#fcNext").addEventListener('click',()=>{fc.i=(fc.i+1)%fc.deck.length;fc.flip=false;paintCard();});
+  $("#fcFlip").addEventListener('click',()=>{fc.flip=!fc.flip;paintCard();});
+  $("#fcShuffle").addEventListener('click',()=>{fc.deck=shuffle(fc.deck);fc.i=0;fc.flip=false;paintCard();toast('Deck shuffled.');});
+  const onKey=e=>{
+    if(e.target&&/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+    if(e.code==='Space'){e.preventDefault();fc.flip=!fc.flip;paintCard();}
+    else if(e.key==='ArrowRight'){fc.i=(fc.i+1)%fc.deck.length;fc.flip=false;paintCard();}
+    else if(e.key==='ArrowLeft'){fc.i=(fc.i-1+fc.deck.length)%fc.deck.length;fc.flip=false;paintCard();}
+  };
+  document.addEventListener('keydown',onKey);
+  cleanup=()=>document.removeEventListener('keydown',onKey);
+}
+function paintCard(){
+  const m=$("#fcMount"); if(!m) return;
+  const c=fc.deck[fc.i];
+  m.innerHTML=`<div class="flip ${fc.flip?'on':''}" id="flipEl">
+      <div class="flip-inner">
+        <div class="face front"><div class="kind">${c.kind} · ${DOM[c.domain].short}</div><div class="q">${c.front}</div><div class="hint">tap to flip</div></div>
+        <div class="face back"><div class="kind">answer</div><div class="a">${c.back}</div><div class="hint">tap to flip back</div></div>
+      </div>
+    </div>
+    <div class="deck-meta"><span>${fc.i+1} / ${fc.deck.length}</span><span class="muted">${DOM[c.domain].short}</span></div>`;
+  $("#flipEl").addEventListener('click',()=>{fc.flip=!fc.flip;paintCard();});
+}
+
+/* ============================================================
+   VIEW: SPACED REPETITION (Leitner)
+   ============================================================ */
+const SRS_DAYS={1:0,2:1,3:3,4:7,5:16};
+function srsState(){return store.get('srs',{});}
+function srsDueList(){const s=srsState(),now=Date.now();return deckAll().filter(c=>{const r=s[c.key];return !r||(r.due||0)<=now;});}
+function srsDueCount(){return srsDueList().length;}
+function srsBoxes(){const s=srsState(),n={1:0,2:0,3:0,4:0,5:0};deckAll().forEach(c=>{const b=(s[c.key]&&s[c.key].box)||1;n[b]++;});return n;}
+function srsRate(key,ok){const s=srsState();const cur=s[key]||{box:1};let box=cur.box||1;box=ok?Math.min(5,box+1):1;s[key]={box,due:Date.now()+(SRS_DAYS[box]||0)*86400000};store.set('srs',s);}
+
+let srsQ=null;
+function renderSRS(){
+  srsQ=shuffle(srsDueList());
+  paintSRS(true);
+}
+function paintSRS(full){
+  const boxes=srsBoxes();
+  const boxRow=`<div class="boxes">${[1,2,3,4,5].map(b=>`<div class="lbox ${b===1?'due':''}"><div class="n">${boxes[b]}</div><div class="l">Box ${b}</div></div>`).join('')}</div>`;
+  const note = store.ok?'':'<p class="muted" style="font-size:.85rem">Storage is blocked in this context, so progress will not persist between sessions. Open the file directly or host it and it will remember.</p>';
+  let inner;
+  if(!srsQ.length){
+    inner=`<div class="empty"><div class="ei">${ICONS.brain}</div><h3>Nothing due</h3><p>Your brain gets a rest day. Come back tomorrow, or drill the full deck without the schedule.</p>
+      <div class="btn-row" style="justify-content:center;margin-top:16px">
+        <button class="btn solid" data-go="flashcards">Open flashcards</button>
+        <button class="btn" id="srsAll">Review all anyway</button>
+      </div></div>`;
+  } else {
+    inner=`<div class="progress-line"><span>${srsQ.length} due</span></div>
+      <div id="srsMount"></div>
+      <div class="rate-row">
+        <button class="btn" id="srsMiss" style="background:var(--stop);color:#fff">Missed &nbsp;&#8635;</button>
+        <button class="btn solid" id="srsGot">Got it &nbsp;&#8593;</button>
+      </div>
+      <p class="muted" style="font-size:.82rem;margin-top:14px">Got it promotes the card to a longer interval. Missed sends it back to Box 1. That is the whole trick.</p>`;
+  }
+  const body=win('daily review',boxRow+inner+note,{icon:'brain'});
+  const resetBtn=`<div class="btn-row" style="margin-top:2px"><button class="btn ghost sm" id="srsReset">Reset all review progress</button></div>`;
+  setView(head('spaced repetition','Daily Review','A Leitner system. Cards you know come back less often; cards you miss come back fast.')+body+resetBtn);
+
+  $$('[data-go]').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.go)));
+  const rb=$("#srsReset"); if(rb) rb.addEventListener('click',()=>{if(confirm('Reset all spaced-repetition progress? This cannot be undone.')){store.set('srs',{});toast('Review progress reset.');renderSRS();}});
+  const allb=$("#srsAll"); if(allb) allb.addEventListener('click',()=>{srsQ=shuffle(deckAll());paintSRS(true);});
+  if(srsQ.length){
+    paintSRSCard();
+    $("#srsGot").addEventListener('click',()=>rateCurrent(true));
+    $("#srsMiss").addEventListener('click',()=>rateCurrent(false));
+  }
+}
+let srsFlip=false;
+function paintSRSCard(){
+  srsFlip=false;
+  const m=$("#srsMount"); if(!m) return;
+  const c=srsQ[0];
+  m.innerHTML=`<div class="flip" id="srsCard"><div class="flip-inner">
+      <div class="face front"><div class="kind">${c.kind} · ${DOM[c.domain].short}</div><div class="q">${c.front}</div><div class="hint">tap to reveal</div></div>
+      <div class="face back"><div class="kind">answer</div><div class="a">${c.back}</div><div class="hint">rate yourself below</div></div>
+    </div></div>`;
+  $("#srsCard").addEventListener('click',()=>{srsFlip=!srsFlip;$("#srsCard").classList.toggle('on',srsFlip);});
+}
+function rateCurrent(ok){
+  const c=srsQ.shift();
+  if(c) srsRate(c.key,ok);
+  if(!srsQ.length){paintSRS(true);toast(ok?'Nice. Queue clear.':'Queue clear. That one will be back.');return;}
+  const pl=$('.progress-line span'); if(pl) pl.textContent=srsQ.length+' due';
+  paintSRSCard();
+}
+
+/* ============================================================
+   VIEW: QUIZ
+   ============================================================ */
+let quiz=null;
+function renderQuiz(){
+  if(!quiz){
+    const pills=`<button class="pill" data-dom="all" aria-pressed="false">All domains</button>`+
+      DOMAINS.map(d=>`<button class="pill" data-dom="${d.id}" aria-pressed="false">${d.short}</button>`).join('');
+    setView(head('practice quiz','Quizzes','Pick a domain. One question at a time, answer, see why. No timer, no pressure.')+
+      win('choose a set',`<p class="muted" style="margin-bottom:14px">Each set is drawn from ${QUESTIONS.length} questions and shuffled.</p><div class="pills" id="quizPick">${pills}</div>`,{icon:'quiz'}));
+    $$('#quizPick .pill').forEach(p=>p.addEventListener('click',()=>startQuiz(p.dataset.dom)));
+    return;
+  }
+  paintQuiz();
+}
+function startQuiz(dom){
+  const pool=dom==='all'?QUESTIONS:QUESTIONS.filter(q=>q.d===dom);
+  quiz={dom,set:shuffle(pool).map(prepQ),i:0,score:0,answered:false};
+  paintQuiz();
+}
+function paintQuiz(){
+  quiz.answered=false;
+  const q=quiz.set[quiz.i];
+  const pct=Math.round((quiz.i)/quiz.set.length*100);
+  const domName=quiz.dom==='all'?'All domains':DOM[quiz.dom].short;
+  const choices=q.c.map((c,i)=>`<button class="choice" data-i="${i}"><span class="letter">${letter(i)}</span><span>${c}</span></button>`).join('');
+  setView(head('practice quiz','Quizzes',null)+
+    win(domName.toLowerCase()+' // question '+(quiz.i+1),
+      `<div class="progress-line"><span>${quiz.i+1} / ${quiz.set.length}</span><div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div><span>Score ${quiz.score}</span></div>
+       <div class="q-stem">${q.q}</div>
+       <div class="choices" id="qChoices">${choices}</div>
+       <div id="qExplain"></div>
+       <div class="btn-row" id="qFoot" style="margin-top:16px;justify-content:space-between">
+         <button class="btn ghost sm" id="qQuit">End quiz</button>
+       </div>`,{icon:'quiz'}));
+  $("#qQuit").addEventListener('click',()=>{quiz=null;showView('quiz');});
+  $$('#qChoices .choice').forEach(btn=>btn.addEventListener('click',()=>answerQuiz(+btn.dataset.i)));
+}
+function answerQuiz(pick){
+  if(quiz.answered) return;
+  quiz.answered=true;
+  const q=quiz.set[quiz.i];
+  const correct=q.a;
+  if(pick===correct) quiz.score++;
+  $$('#qChoices .choice').forEach(btn=>{
+    const i=+btn.dataset.i;
+    btn.disabled=true;
+    if(i===correct) btn.dataset.state='right';
+    else if(i===pick) btn.dataset.state='wrong';
+    else btn.dataset.state='dim';
+  });
+  const verdict = pick===correct?'<span class="chip go">Correct</span>':'<span class="chip stop">Not quite</span>';
+  $("#qExplain").innerHTML=`<div class="explain"><span class="eyebrow">Why</span>${verdict}<p style="margin:10px 0 0">${q.why}</p></div>`;
+  const last=quiz.i>=quiz.set.length-1;
+  const foot=$("#qFoot");
+  const nextBtn=document.createElement('button');
+  nextBtn.className='btn solid';
+  nextBtn.textContent=last?'See results':'Next question';
+  nextBtn.addEventListener('click',()=>{
+    if(last){quizResults();return;}
+    quiz.i++;quiz.answered=false;paintQuiz();
+  });
+  foot.appendChild(nextBtn);
+}
+function quizResults(){
+  const pct=Math.round(quiz.score/quiz.set.length*100);
+  const pass=pct>=70;
+  const line=pass?'That would pass. Keep the streak going.':'Below the 70 line. Review the misses and run it again.';
+  setView(head('practice quiz','Quiz complete',null)+
+    win('results',
+      `<div style="text-align:center">
+         <div class="result-score" style="color:${pass?'var(--go)':'var(--stop)'}">${pct}%</div>
+         <div class="eyebrow" style="color:var(--grape)">${quiz.score} of ${quiz.set.length} correct</div>
+         <p class="lede" style="margin:14px auto 0;max-width:44ch">${line}</p>
+         <div class="btn-row" style="justify-content:center;margin-top:20px">
+           <button class="btn solid" id="qAgain">Another set</button>
+           <button class="btn" data-go="srs">Drill weak spots in review</button>
+         </div>
+       </div>`,{cls:pass?'':'',icon:'quiz'}));
+  $("#qAgain").addEventListener('click',()=>{quiz=null;showView('quiz');});
+  $$('[data-go]').forEach(b=>b.addEventListener('click',()=>{quiz=null;showView(b.dataset.go);}));
+}
+
+/* ============================================================
+   VIEW: EXAM SIMULATOR
+   ============================================================ */
+let exam=null;
+function fmt(s){const m=Math.floor(s/60),ss=s%60;return m+':'+String(ss).padStart(2,'0');}
+function renderExam(){
+  if(!exam||exam.phase==='config'){examConfig();return;}
+  if(exam.phase==='run'){examRun();return;}
+  examResult();
+}
+function examConfig(){
+  const best=store.get('examBest',null);
+  const opts=[{n:25,l:'Quick'},{n:50,l:'Half'},{n:Math.min(QUESTIONS.length,80),l:'Full bank'}];
+  setView(head('exam simulator','Timed Simulator','A scored mock under the clock. Roughly 1.2 minutes per question, just like the real thing. Pass line is 70.')+
+    win('set it up',
+      `<p class="muted" style="margin-bottom:16px">Pick a length. Questions are pulled at random across all domains and the timer scales to match.</p>
+       <div class="btn-row">${opts.map(o=>`<button class="btn solid" data-n="${o.n}">${o.l} · ${o.n} Q · ${Math.round(o.n*1.2)} min</button>`).join('')}</div>
+       ${best!=null?`<p style="margin-top:18px" class="mono">Best so far: <b style="color:${best>=70?'var(--go)':'var(--stop)'}">${best}%</b></p>`:''}
+       <p class="muted" style="font-size:.82rem;margin-top:18px">Flag questions to revisit, then submit when ready or let the clock run out. You get a full answer review at the end.</p>`,{icon:'timer'}));
+  $$('[data-n]').forEach(b=>b.addEventListener('click',()=>startExam(+b.dataset.n)));
+}
+function startExam(n){
+  const qs=shuffle(QUESTIONS).slice(0,n).map(prepQ);
+  exam={phase:'run',qs,ans:{},flag:{},idx:0,remaining:Math.round(n*72),timer:null};
+  examRun();
+}
+function examTick(){
+  if(!exam||exam.phase!=='run') return;
+  exam.remaining--;
+  const t=$("#examTimer");
+  if(t){t.textContent=fmt(Math.max(0,exam.remaining));t.classList.toggle('warn',exam.remaining<=60);}
+  if(exam.remaining<=0){submitExam(true);}
+}
+function examRun(){
+  if(exam.timer){clearInterval(exam.timer);}
+  const q=exam.qs[exam.idx];
+  const answered=Object.keys(exam.ans).length;
+  const choices=q.c.map((c,i)=>`<button class="choice" data-i="${i}" ${exam.ans[exam.idx]===i?'data-state="sel"':''}><span class="letter">${letter(i)}</span><span>${c}</span></button>`).join('');
+  const dots=exam.qs.map((_,i)=>{
+    let s=''; if(i===exam.idx)s='current'; else if(exam.flag[i])s='flagged'; else if(exam.ans[i]!=null)s='answered';
+    return `<button class="qdot" data-s="${s}" data-jump="${i}">${i+1}</button>`;
+  }).join('');
+  setView(
+    `<div class="exam-top">
+       <div class="eyebrow" style="color:var(--grape)">exam simulator · ${answered}/${exam.qs.length} answered</div>
+       <div class="timer" id="examTimer">${fmt(exam.remaining)}</div>
+     </div>`+
+    win('question '+(exam.idx+1)+' of '+exam.qs.length,
+      `<div class="q-stem">${q.q}</div>
+       <div class="choices" id="exChoices">${choices}</div>
+       <div class="qnav">${dots}</div>
+       <div class="btn-row" style="justify-content:space-between">
+         <div class="btn-row">
+           <button class="btn sm" id="exPrev">Prev</button>
+           <button class="btn sm" id="exNext">Next</button>
+           <button class="btn sm ghost" id="exFlag">${exam.flag[exam.idx]?'Unflag':'Flag'}</button>
+         </div>
+         <button class="btn solid sm" id="exSubmit">Submit exam</button>
+       </div>`,{icon:'timer'}));
+  // selected state styling reuse
+  $$('#exChoices .choice').forEach(b=>{ if(b.dataset.state==='sel'){b.style.background='var(--shock)';} b.addEventListener('click',()=>{exam.ans[exam.idx]=+b.dataset.i;examRun();}); });
+  $("#exPrev").addEventListener('click',()=>{exam.idx=(exam.idx-1+exam.qs.length)%exam.qs.length;examRun();});
+  $("#exNext").addEventListener('click',()=>{exam.idx=(exam.idx+1)%exam.qs.length;examRun();});
+  $("#exFlag").addEventListener('click',()=>{exam.flag[exam.idx]=!exam.flag[exam.idx];examRun();});
+  $("#exSubmit").addEventListener('click',()=>{const miss=exam.qs.length-Object.keys(exam.ans).length;if(miss>0){if(!confirm(miss+' question(s) still blank. Submit anyway?'))return;}submitExam(false);});
+  $$('[data-jump]').forEach(b=>b.addEventListener('click',()=>{exam.idx=+b.dataset.jump;examRun();}));
+  exam.timer=setInterval(examTick,1000);
+  cleanup=()=>{if(exam&&exam.timer){clearInterval(exam.timer);exam.timer=null;}};
+}
+function submitExam(timeUp){
+  if(exam.timer){clearInterval(exam.timer);exam.timer=null;}
+  exam.phase='result';exam.timeUp=timeUp;
+  examResult();
+}
+function examResult(){
+  const total=exam.qs.length;
+  let correct=0; const byDom={};
+  exam.qs.forEach((q,i)=>{
+    const ok=exam.ans[i]===q.a; if(ok)correct++;
+    const d=byDom[q.d]||(byDom[q.d]={c:0,t:0}); d.t++; if(ok)d.c++;
+  });
+  const pct=Math.round(correct/total*100);
+  const pass=pct>=70;
+  const prevBest=store.get('examBest',null);
+  if(prevBest==null||pct>prevBest) store.set('examBest',pct);
+  const bars=Object.keys(byDom).sort().map(id=>{
+    const d=byDom[id],p=Math.round(d.c/d.t*100);
+    return `<div class="dbar"><span class="lab">${DOM[id].short}</span><div class="track"><div class="fill" style="width:${p}%"></div></div><span>${d.c}/${d.t}</span></div>`;
+  }).join('');
+  const review=exam.qs.map((q,i)=>{
+    const your=exam.ans[i];
+    const ok=your===q.a;
+    return `<div class="explain" style="margin-top:12px">
+      <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap">
+        <span class="eyebrow" style="color:var(--grape)">Q${i+1} · ${DOM[q.d].short}</span>
+        ${ok?'<span class="chip go">Correct</span>':'<span class="chip stop">'+(your==null?'Skipped':'Wrong')+'</span>'}
+      </div>
+      <p style="margin:10px 0 6px"><b>${q.q}</b></p>
+      <p style="margin:0 0 4px">Correct: ${letter(q.a)}. ${q.c[q.a]}</p>
+      ${your!=null&&!ok?`<p style="margin:0 0 6px;color:var(--stop)">You chose: ${letter(your)}. ${q.c[your]}</p>`:''}
+      <p style="margin:6px 0 0" class="muted">${q.why}</p>
+    </div>`;
+  }).join('');
+  setView(head('exam simulator','Exam scored',exam.timeUp?'Time ran out, so blanks were marked wrong.':null)+
+    win('result',
+      `<div style="text-align:center">
+        <div class="result-score" style="color:${pass?'var(--go)':'var(--stop)'}">${pct}%</div>
+        <div class="eyebrow" style="color:var(--grape)">${correct} of ${total} correct · pass line 70</div>
+        <p class="lede" style="margin:12px auto 0;max-width:46ch">${pass?'Passing range. Do it again with the full bank to be sure.':'Under the line. The domain breakdown below shows where to aim.'}</p>
+        <div class="btn-row" style="justify-content:center;margin-top:18px">
+          <button class="btn solid" id="exAgain">New attempt</button>
+          <button class="btn" data-go="srs">Shore up in review</button>
+        </div>
+      </div>`,{icon:'timer'})+
+    win('by domain',bars||'<p class="muted">No breakdown available.</p>',{cls:'grape',icon:'globe'})+
+    win('answer review',review,{icon:'quiz'}));
+  $("#exAgain").addEventListener('click',()=>{exam={phase:'config'};showView('exam');});
+  $$('[data-go]').forEach(b=>b.addEventListener('click',()=>{exam={phase:'config'};showView(b.dataset.go);}));
+}
+
+/* ============================================================
+   VIEW: STUDY GUIDES
+   ============================================================ */
+function guideKey(dom,si,pi){return 'g:'+dom+':'+si+':'+pi;}
+function renderGuides(){
+  const checks=store.get('guideChecks',{});
+  const blocks=DOMAINS.map(d=>{
+    const secs=d.guide.map((sec,si)=>`
+      <div class="guide-sec">
+        <h3>${sec.h}</h3>
+        ${sec.points.map((p,pi)=>{const k=guideKey(d.id,si,pi);return `<label class="check"><input type="checkbox" data-k="${k}" ${checks[k]?'checked':''}><span>${p}</span></label>`;}).join('')}
+      </div>`).join('');
+    const hy=`<div class="hy"><span class="eyebrow">High yield</span><ul>${d.highYield.map(x=>`<li>${x}</li>`).join('')}</ul></div>`;
+    const mn=`<div class="prose"><div class="callout"><span class="eyebrow">Mnemonic · ${d.mnemonic.name}</span>${d.mnemonic.text}</div></div>`;
+    return win(d.code+' // '+d.name.toLowerCase(), hy+secs+mn,{icon:d.icon});
+  }).join('');
+  setView(head('study guides','Study Guides','Condensed checklists, the high-yield hits, and a mnemonic per domain. Tick items off as you master them.')+
+    `<div class="btn-row" style="margin-bottom:18px"><button class="btn solid sm" id="printGuides">Print / save as PDF</button><button class="btn ghost sm" id="clearChecks">Clear all checkmarks</button></div>`+
+    blocks);
+  $$('.check input').forEach(cb=>cb.addEventListener('change',()=>{
+    const c=store.get('guideChecks',{}); c[cb.dataset.k]=cb.checked; store.set('guideChecks',c);
+  }));
+  $("#printGuides").addEventListener('click',()=>{const v=$(".view");v.classList.add('printing');window.print();setTimeout(()=>v.classList.remove('printing'),400);});
+  $("#clearChecks").addEventListener('click',()=>{if(confirm('Clear every checkmark across all guides?')){store.set('guideChecks',{});toast('Checkmarks cleared.');renderGuides();}});
+}
+
+/* ============================================================
+   VIEW: PRIME MOVER MATCHER
+   ============================================================ */
+let mv=null;
+function renderMovers(){startMovers();paintMovers();}
+function startMovers(){
+  const pick=shuffle(MOVERS).slice(0,8).map((p,i)=>({...p,id:i}));
+  mv={pairs:pick,left:shuffle(pick.map(p=>({id:p.id,txt:p.action}))),right:shuffle(pick.map(p=>({id:p.id,txt:p.muscle}))),sel:{L:null,R:null},done:new Set(),mistakes:0,busy:false};
+}
+function paintMovers(){
+  const remaining=mv.pairs.length-mv.done.size;
+  const leftCol=mv.left.map(x=>`<button class="mtok" data-side="L" data-id="${x.id}" ${mv.done.has(x.id)?'data-s="done" disabled':''}>${x.txt}</button>`).join('');
+  const rightCol=mv.right.map(x=>`<button class="mtok" data-side="R" data-id="${x.id}" ${mv.done.has(x.id)?'data-s="done" disabled':''}>${x.txt}</button>`).join('');
+  const bodyOrDone = remaining===0
+    ? `<div class="empty"><div class="ei">${ICONS.match}</div><h3>All matched</h3><p>Eight for eight${mv.mistakes?` with ${mv.mistakes} misstep${mv.mistakes>1?'s':''}`:', clean run'}. Reshuffle for a new set.</p><div class="btn-row" style="justify-content:center;margin-top:14px"><button class="btn solid" id="mvNew">New round</button></div></div>`
+    : `<p class="muted" style="margin-bottom:14px">Tap an action, then its prime mover. ${remaining} pair${remaining>1?'s':''} left · ${mv.mistakes} miss${mv.mistakes===1?'':'es'}.</p>
+       <div class="match">
+         <div class="mcol"><div class="colhead">Joint action</div>${leftCol}</div>
+         <div class="mcol"><div class="colhead">Prime mover</div>${rightCol}</div>
+       </div>
+       <div class="btn-row" style="margin-top:16px"><button class="btn ghost sm" id="mvReset">Restart round</button></div>`;
+  setView(head('anatomy trainer','Prime Movers','The most-tested muscle actions. Match each movement to the muscle chiefly responsible.')+
+    win('match the pair',bodyOrDone,{cls:remaining===0?'grape':'',icon:'match'}));
+  const nb=$("#mvNew"); if(nb) nb.addEventListener('click',()=>{startMovers();paintMovers();});
+  const rb=$("#mvReset"); if(rb) rb.addEventListener('click',()=>{const p=mv.pairs;mv.done=new Set();mv.mistakes=0;mv.sel={L:null,R:null};mv.left=shuffle(p.map(x=>({id:x.id,txt:x.action})));mv.right=shuffle(p.map(x=>({id:x.id,txt:x.muscle})));paintMovers();});
+  $$('.mtok:not([disabled])').forEach(b=>b.addEventListener('click',()=>pickMover(b)));
+  reflectSel();
+}
+function reflectSel(){
+  $$('.mtok').forEach(b=>{if(b.dataset.s==='done')return; const side=b.dataset.side; if(mv.sel[side]!=null&&+b.dataset.id===mv.sel[side]&&isSelectedNode(b)) b.dataset.s='sel'; else if(b.dataset.s==='sel') b.removeAttribute('data-s');});
+}
+let selNodes={L:null,R:null};
+function isSelectedNode(b){return selNodes[b.dataset.side]===b;}
+function pickMover(btn){
+  if(mv.busy) return;
+  const side=btn.dataset.side, id=+btn.dataset.id;
+  $$('.mtok[data-side="'+side+'"]').forEach(b=>{if(b.dataset.s==='sel')b.removeAttribute('data-s');});
+  mv.sel[side]=id; selNodes[side]=btn; btn.dataset.s='sel';
+  if(mv.sel.L!=null&&mv.sel.R!=null){
+    if(mv.sel.L===mv.sel.R){
+      const good=mv.sel.L; mv.done.add(good);
+      mv.sel={L:null,R:null}; selNodes={L:null,R:null};
+      paintMovers();
+      if(mv.done.size===mv.pairs.length) toast('Round complete.');
+    } else {
+      mv.mistakes++; mv.busy=true;
+      const lNode=selNodes.L,rNode=selNodes.R;
+      if(lNode)lNode.dataset.s='miss'; if(rNode)rNode.dataset.s='miss';
+      setTimeout(()=>{if(lNode)lNode.removeAttribute('data-s');if(rNode)rNode.removeAttribute('data-s');mv.sel={L:null,R:null};selNodes={L:null,R:null};mv.busy=false;const m=$('.match')?$('.match').previousElementSibling:null;if(m)m.textContent=(mv.pairs.length-mv.done.size)+' pairs left · '+mv.mistakes+' misses';},450);
+    }
+  }
+}
+
+/* ============================================================
+   VIEW: SCENARIOS
+   ============================================================ */
+let sc={i:0,answered:false};
+function renderScenarios(){
+  sc.answered=false;
+  const s=SCENARIOS[sc.i];
+  const order=shuffle(s.c.map((_,i)=>i));
+  const choices=order.map((oi,pos)=>`<button class="choice" data-i="${oi}"><span class="letter">${letter(pos)}</span><span>${s.c[oi]}</span></button>`).join('');
+  setView(head('case studies','Scenarios','Client situations that force a judgment call. Read it, decide, then see the reasoning.')+
+    win('case '+(sc.i+1)+' of '+SCENARIOS.length+' // '+DOM[s.domain].short.toLowerCase(),
+      `<div class="tag pink" style="margin-bottom:12px">${s.title}</div>
+       <p style="font-size:1.02rem;margin-bottom:16px">${s.setup}</p>
+       <div class="q-stem">${s.prompt}</div>
+       <div class="choices" id="scChoices">${choices}</div>
+       <div id="scExplain"></div>
+       <div class="btn-row" id="scFoot" style="margin-top:16px;justify-content:space-between">
+         <button class="btn ghost sm" id="scPrev">Previous</button>
+         <span></span>
+       </div>`,{cls:'',icon:'globe'}));
+  $$('#scChoices .choice').forEach(b=>b.addEventListener('click',()=>answerScenario(+b.dataset.i)));
+  $("#scPrev").addEventListener('click',()=>{sc.i=(sc.i-1+SCENARIOS.length)%SCENARIOS.length;sc.answered=false;renderScenarios();});
+}
+function answerScenario(pick){
+  if(sc.answered) return; sc.answered=true;
+  const s=SCENARIOS[sc.i];
+  $$('#scChoices .choice').forEach(b=>{const i=+b.dataset.i;b.disabled=true;if(i===s.a)b.dataset.state='right';else if(i===pick)b.dataset.state='wrong';else b.dataset.state='dim';});
+  const v=pick===s.a?'<span class="chip go">Sound call</span>':'<span class="chip stop">Reconsider</span>';
+  $("#scExplain").innerHTML=`<div class="explain"><span class="eyebrow">Debrief</span>${v}<p style="margin:10px 0 0">${s.why}</p></div>`;
+  const last=sc.i>=SCENARIOS.length-1;
+  const nb=document.createElement('button'); nb.className='btn solid';
+  nb.textContent=last?'Back to start':'Next case';
+  nb.addEventListener('click',()=>{sc.i=last?0:sc.i+1;sc.answered=false;renderScenarios();});
+  $("#scFoot").appendChild(nb);
+}
+
+/* ============================================================
+   VIEW: CROSSWORD
+   ============================================================ */
+function genCrossword(words){
+  words=words.map(w=>({answer:w.answer.toUpperCase().replace(/[^A-Z]/g,''),clue:w.clue}));
+  const list=shuffle(words).sort((a,b)=>b.answer.length-a.answer.length);
+  const grid={}, placed=[];
+  const cell=(r,c)=>grid[r+','+c];
+  function canPlace(word,r,c,dir){
+    const dr=dir==='D'?1:0, dc=dir==='A'?1:0;
+    if(cell(r-dr,c-dc)!=null) return false;
+    if(cell(r+dr*word.length,c+dc*word.length)!=null) return false;
+    for(let i=0;i<word.length;i++){
+      const rr=r+dr*i, cc=c+dc*i, ex=cell(rr,cc);
+      if(ex!=null){ if(ex!==word[i]) return false; }
+      else {
+        if(dir==='A'){ if(cell(rr-1,cc)!=null||cell(rr+1,cc)!=null) return false; }
+        else { if(cell(rr,cc-1)!=null||cell(rr,cc+1)!=null) return false; }
+      }
+    }
+    return true;
+  }
+  function put(word,r,c,dir){const dr=dir==='D'?1:0,dc=dir==='A'?1:0;for(let i=0;i<word.length;i++)grid[(r+dr*i)+','+(c+dc*i)]=word[i];}
+  if(!list.length) return null;
+  put(list[0].answer,0,0,'A'); placed.push({...list[0],row:0,col:0,dir:'A'});
+  for(let k=1;k<list.length;k++){
+    const w=list[k].answer; let best=null;
+    for(let i=0;i<w.length&&!best;i++){
+      for(const p of placed){
+        for(let j=0;j<p.answer.length;j++){
+          if(p.answer[j]!==w[i]) continue;
+          const dir=p.dir==='A'?'D':'A';
+          let r,c;
+          if(p.dir==='A'){r=p.row-i;c=p.col+j;} else {r=p.row+j;c=p.col-i;}
+          if(canPlace(w,r,c,dir)){best={r,c,dir};break;}
+        }
+        if(best) break;
+      }
+    }
+    if(best){put(w,best.r,best.c,best.dir);placed.push({...list[k],row:best.r,col:best.c,dir:best.dir});}
+  }
+  let minR=1e9,minC=1e9,maxR=-1e9,maxC=-1e9;
+  Object.keys(grid).forEach(k=>{const [r,c]=k.split(',').map(Number);minR=Math.min(minR,r);maxR=Math.max(maxR,r);minC=Math.min(minC,c);maxC=Math.max(maxC,c);});
+  const rows=maxR-minR+1, cols=maxC-minC+1;
+  const M=Array.from({length:rows},()=>Array(cols).fill(null));
+  Object.keys(grid).forEach(k=>{const [r,c]=k.split(',').map(Number);M[r-minR][c-minC]=grid[k];});
+  const norm=placed.map(p=>({...p,row:p.row-minR,col:p.col-minC}));
+  const numAt={}; let num=0;
+  for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){
+    if(M[r][c]==null) continue;
+    const startA=(c===0||M[r][c-1]==null)&&(c+1<cols&&M[r][c+1]!=null);
+    const startD=(r===0||M[r-1][c]==null)&&(r+1<rows&&M[r+1][c]!=null);
+    if(startA||startD){num++;numAt[r+','+c]=num;}
+  }
+  norm.forEach(p=>p.num=numAt[p.row+','+p.col]);
+  const across=norm.filter(p=>p.dir==='A').sort((a,b)=>a.num-b.num);
+  const down=norm.filter(p=>p.dir==='D').sort((a,b)=>a.num-b.num);
+  return {M,rows,cols,numAt,across,down,placedCount:norm.length,total:words.length};
+}
+let xw=null;
+function renderCrossword(){
+  xw=genCrossword(shuffle(CROSSWORD_WORDS).slice(0,22));
+  if(!xw){setView(win('crossword','<div class="empty"><h3>Could not build a grid</h3></div>'));return;}
+  const cells=[];
+  for(let r=0;r<xw.rows;r++)for(let c=0;c<xw.cols;c++){
+    if(xw.M[r][c]==null){cells.push(`<div class="xw-cell void"></div>`);continue;}
+    const n=xw.numAt[r+','+c];
+    cells.push(`<div class="xw-cell">${n?`<span class="xw-num">${n}</span>`:''}<input maxlength="1" inputmode="latin" data-r="${r}" data-c="${c}" aria-label="row ${r+1} column ${c+1}"></div>`);
+  }
+  const acl=xw.across.map(p=>`<li><b>${p.num}.</b><span>${p.clue}</span></li>`).join('');
+  const dcl=xw.down.map(p=>`<li><b>${p.num}.</b><span>${p.clue}</span></li>`).join('');
+  setView(head('vocabulary puzzle','Crossword',`${xw.placedCount} terms from the glossary, laid out fresh each time. Fill it in, then check yourself.`)+
+    win('puzzle',
+      `<div class="btn-row" style="margin-bottom:16px">
+         <button class="btn solid sm" id="xwCheck">Check</button>
+         <button class="btn sm" id="xwReveal">Reveal</button>
+         <button class="btn ghost sm" id="xwNew">New puzzle</button>
+       </div>
+       <div class="xw-wrap">
+         <div class="xw-scroll"><div class="xw-grid" style="grid-template-columns:repeat(${xw.cols},1fr)">${cells.join('')}</div></div>
+         <div class="clues"><div><h4>Across</h4><ol>${acl}</ol></div><div><h4>Down</h4><ol>${dcl}</ol></div></div>
+       </div>`,{icon:'grid'}));
+  const inputs=$$('.xw-cell input');
+  inputs.forEach((inp,idx)=>{
+    inp.addEventListener('input',()=>{inp.value=inp.value.toUpperCase().replace(/[^A-Z]/g,'').slice(0,1);inp.parentElement.classList.remove('ok','bad');if(inp.value&&inputs[idx+1])inputs[idx+1].focus();});
+    inp.addEventListener('keydown',e=>{if(e.key==='Backspace'&&!inp.value&&inputs[idx-1])inputs[idx-1].focus();});
+  });
+  $("#xwCheck").addEventListener('click',()=>{
+    let filled=0,right=0;
+    inputs.forEach(inp=>{const r=+inp.dataset.r,c=+inp.dataset.c,sol=xw.M[r][c];inp.parentElement.classList.remove('ok','bad');if(inp.value){filled++;if(inp.value===sol){right++;inp.parentElement.classList.add('ok');}else inp.parentElement.classList.add('bad');}});
+    if(!filled) toast('Fill in a few letters first.');
+    else if(right===inputs.length) toast('Solved. Every square checks out.');
+    else toast(right+' of '+inputs.length+' correct.');
+  });
+  $("#xwReveal").addEventListener('click',()=>{if(!confirm('Reveal the whole solution?'))return;inputs.forEach(inp=>{const r=+inp.dataset.r,c=+inp.dataset.c;inp.value=xw.M[r][c];inp.parentElement.classList.remove('bad');inp.parentElement.classList.add('ok');});});
+  $("#xwNew").addEventListener('click',()=>renderCrossword());
+}
+
+/* ============================================================
+   VIEW: READ ME
+   ============================================================ */
+function renderAbout(){
+  setView(head('read me','About Spotter','What this is, what it is not, and how to get the most out of it.')+
+    win('the honest version',
+      `<div class="prose">
+        <p>Spotter is an independent study aid for the NCSF Certified Personal Trainer exam. The content is built from open, well-established exercise-science knowledge mapped to the exam's domains. It is not NCSF's official material, it is not affiliated with or endorsed by NCSF, and it will not match their textbook word for word. Treat it as a companion for drilling and self-testing, and confirm any specific number or definition against the current official source before your exam.</p>
+        <div class="callout"><span class="eyebrow">One honest flag</span>A few topics have moving targets. Blood-pressure categories, for instance, differ between current guidelines and older materials some courses still use. Where that happens, the app tells you to verify which set your exam follows rather than pretending there is one tidy answer.</div>
+        <h3>What is inside</h3>
+        <ul>
+          <li>Summaries and printable study guides for all seven domains.</li>
+          <li>A glossary, a flashcard deck, and a spaced-repetition system that schedules reviews for you.</li>
+          <li>Practice quizzes, a timed exam simulator scored to 70, client scenarios, a prime-mover matcher, and a crossword.</li>
+        </ul>
+        <h3>How to use it</h3>
+        <ul>
+          <li>Read a domain summary, then run its quiz to find the gaps.</li>
+          <li>Do the daily review every day. Short and frequent beats long and rare.</li>
+          <li>Use the simulator once you are scoring well, to practice pacing under the clock.</li>
+        </ul>
+        <h3>Your data</h3>
+        <p>Everything stays on your device in this browser. Progress is saved locally, nothing is uploaded, and there is no account. Clearing your browser data or using a different device starts you fresh.</p>
+        <h3>Going deeper</h3>
+        <p>For broader free prep, the community around resources like PTPioneer and shared Quizlet decks can help, though quality varies and some decks are noisy. NCSF's own textbook, practice exams, and flashcards remain the source of truth for what will actually be tested.</p>
+      </div>`,{cls:'',icon:'info'})+
+    win('exam facts',
+      `<div class="stats" style="margin-top:0">
+        <div class="stat"><div class="n">150</div><div class="l">Total questions</div></div>
+        <div class="stat"><div class="n">180</div><div class="l">Minutes</div></div>
+        <div class="stat"><div class="n">70</div><div class="l">Scaled passing score</div></div>
+        <div class="stat"><div class="n">7</div><div class="l">Content domains here</div></div>
+      </div>`,{cls:'grape',icon:'sparkle'}));
+}
+
+/* ============================================================
+   NAV, EASTER EGGS, INIT
+   ============================================================ */
+function buildNav(){
+  const nav=$("#nav");
+  nav.innerHTML=VIEWS.map(v=>`<button class="navlink" data-view="${v.id}"><span class="ni">${ICONS[v.icon]}</span><span class="nt-label">${v.label}</span><span class="nt">${v.tag}</span></button>`).join('');
+  $$('.navlink').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.view)));
+}
+
+function initChrome(){
+  $("#brandGlyph").innerHTML=ICONS.splat;
+  $("#mGlyph").innerHTML=ICONS.splat;
+  $("#brand").addEventListener('click',()=>{brandClicks++;const m={3:'Warming up. Three clicks.',5:"That's a set. Nice tempo.",8:'Eight. This is technically training volume.',12:'Twelve clicks. Go do a real rep.'};if(m[brandClicks])toast(m[brandClicks]);showView('home');});
+  const burger=$("#burger");
+  burger.addEventListener('click',()=>{const open=document.body.classList.toggle('nav-open');burger.setAttribute('aria-expanded',open?'true':'false');});
+  $("#backdrop").addEventListener('click',()=>{document.body.classList.remove('nav-open');burger.setAttribute('aria-expanded','false');});
+}
+let brandClicks=0;
+
+const KON=['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','ArrowRight','ArrowLeft','ArrowRight','b','a'];
+let konIdx=0;
+function initEggs(){
+  document.addEventListener('keydown',e=>{
+    const k=e.key.length===1?e.key.toLowerCase():e.key;
+    konIdx=(k===KON[konIdx])?konIdx+1:(k===KON[0]?1:0);
+    if(konIdx===KON.length){
+      konIdx=0;
+      document.body.classList.add('maxeffort');
+      toast('MAX EFFORT engaged. Re-rack your weights when you are done.');
+      setTimeout(()=>document.body.classList.remove('maxeffort'),1400);
+    }
+  });
+  try{
+    console.log('%cSPOTTER // NCSF-CPT','font:900 22px Helvetica,Arial;color:#EC2CB4');
+    console.log('%cIf you are reading the console, you are procrastinating. Go do a set of flashcards.','font:600 12px monospace;color:#7E2178');
+  }catch(e){}
+}
+
+function routeFromHash(){const id=(location.hash||'').replace('#','');const t=RENDER[id]?id:'home';if(t===currentView)return;showView(t,false);}
+
+buildNav();
+initChrome();
+initEggs();
+window.addEventListener('hashchange',routeFromHash);
+routeFromHash();
+</script>
+</body>
+</html>
